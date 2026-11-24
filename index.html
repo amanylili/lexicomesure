@@ -129,7 +129,7 @@ mark{background:#ffe7a3;padding:0 1px}
       <label class="chk"><input type="checkbox" id="optPlural"> Regrouper singulier et pluriel (approximatif)</label>
       <label class="chk"><input type="checkbox" id="optNum" checked> Traiter les nombres comme mots-outils</label>
       <label class="chk"><input type="checkbox" id="optAr" checked> Arabe : normaliser (voyelles brèves, tatwil, alif)</label>
-      <label class="chk"><input type="checkbox" id="optArCl"> Arabe : détacher l'article et les proclitiques (approximatif)</label>
+      <label class="chk"><input type="checkbox" id="optArCl" checked> Arabe : détacher l'article et les proclitiques (approximatif)</label>
       <span style="flex:1"></span>
       <button class="b" id="analyse">Analyser le corpus</button>
     </div>
@@ -433,7 +433,7 @@ function buildCorpus(texts, opt){
   for(let i=2;i<N+2;i++) lf[i] = lf[i-1] + Math.log(i);
   const normForm = x=>{ if(lower) x = x.toLocaleLowerCase('fr'); if(opt.arNorm) x = arNorm(x); if(merge.has(x)) return merge.get(x); return (opt.arClitics && !stop.has(x)) ? arStrip(x) : x; };
   let nAr = 0, nL = 0; for(const t of texts){ const sm = t.text.slice(0,20000); nL += (sm.match(/\p{L}/gu)||[]).length; nAr += (sm.match(/[\u0590-\u08FF]/g)||[]).length; }
-  return {normForm, rtl: nL>0 && nAr/nL>0.3, texts, forms, fid, freq, isStop, N, F, tokForm,
+  return {arClitics: !!opt.arClitics, normForm, rtl: nL>0 && nAr/nL>0.3, texts, forms, fid, freq, isStop, N, F, tokForm,
     tokText:Int32Array.from(tText), tokStart:Int32Array.from(tStart), tokEnd:Int32Array.from(tEnd), tokBrk:Uint8Array.from(tBrk),
     vars, variants:variants.map(s=>[...s]), lf};
 }
@@ -902,6 +902,7 @@ function compileQuery(C, q){
   if(!q) return null;
   const parts = [];
   // une expression régulière /.../ reste entière, le reste est découpé en mots
+  q = q.replace(/[،؛؟]/g,' ');
   const re = /\/[^\/]+\/|\S+/g; let m;
   while((m = re.exec(q))){
     let p = m[0];
@@ -1041,7 +1042,7 @@ function ticks(a,b,n=6){
   for(let v=Math.ceil(a/step)*step; v<=b+step*1e-9; v+=step) out.push(+v.toPrecision(12));
   return out;
 }
-function niceRange(a,b){ const t=ticks(a,b), st=t.length>1?t[1]-t[0]:1; return [Math.floor(a/st-1e-9)*st, Math.ceil(b/st-1e-9)*st]; }
+function niceRange(a,b){ const t=ticks(a,b), st=t.length>1?t[1]-t[0]:1; return [Math.floor(a/st+1e-9)*st, Math.ceil(b/st-1e-9)*st]; }
 function tickLabel(v){ return Math.abs(v)>=1000 ? fmt(Math.round(v)) : String(+v.toPrecision(6)).replace('.',','); }
 
 function lineChart(series, o){
@@ -1392,10 +1393,17 @@ function renderSpecif(){
 
 /* ---------- Ventilation ---------- */
 $('#vGo').onclick = ()=>busy(()=>{
-  const C = App.C, qs = $('#vQuery').value.split(',').map(s=>s.trim()).filter(Boolean), out = $('#ventilOut');
+  const C = App.C, qs = $('#vQuery').value.split(/[,،؛;]/).map(s=>s.trim()).filter(Boolean), out = $('#ventilOut');
   out.innerHTML=''; if(!qs.length) return;
   const part = getPart('v'), meas = $('#vMeasure').value;
-  const res = qs.map(q=>({q, h:LX.findHits(C,q).hits})).map(x=>({...x, v:LX.ventilation(C,part,x.h)}));
+  const all = qs.map(q=>({q, h:LX.findHits(C,q).hits}));
+  const miss = all.filter(x=>!x.h.length), res = all.filter(x=>x.h.length).map(x=>({...x, v:LX.ventilation(C,part,x.h)}));
+  if(miss.length){
+    const w0 = esc(miss[0].q.split(/[|\s]/)[0]);
+    const tip = C.rtl ? ` Essayez une troncature comme <code dir="auto">*${w0}*</code> pour trouver aussi les formes avec préfixes et suffixes.` + (C.arClitics ? '' : ` Vous pouvez aussi cocher « Arabe : détacher l'article et les proclitiques » dans « Importer un corpus », puis relancer l'analyse.`) : ' Essayez une troncature avec <code>*</code>.';
+    out.insertAdjacentHTML('beforeend', `<div class="card" style="border-color:#e0b4a8;background:#fdf5f2">Aucune occurrence pour : ${miss.map(x=>`<b dir="auto">${esc(x.q)}</b>`).join(', ')}.${tip}</div>`);
+  }
+  if(!res.length) return;
   const key = meas==='rel' ? 'rel' : meas==='score' ? 'score' : 'k';
   const ylab = meas==='rel' ? 'Fréquence pour 10 000 occurrences' : meas==='score' ? 'Score de spécificité' : 'Fréquence absolue';
   const lines = meas==='score' ? [{v:2},{v:-2,color:'#2e6da4'}] : null;
