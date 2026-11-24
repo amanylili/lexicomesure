@@ -1,0 +1,1644 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lexicomesure — analyse lexicométrique</title>
+<style>
+:root{--bg:#f6f5f2;--panel:#fff;--ink:#1f2328;--muted:#6b7078;--line:#e2e0db;--accent:#2f5d8a;--accent2:#e8eef5;--pos:#b8322a;--neg:#2e6da4}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink);background:var(--bg);display:grid;grid-template-columns:230px 1fr;grid-template-rows:auto 1fr}
+header{grid-column:1/3;display:flex;align-items:baseline;gap:18px;padding:10px 18px;background:#1f2a36;color:#fff}
+header h1{font-size:17px;margin:0;font-weight:650;letter-spacing:.3px}
+header h1 small{font-weight:400;opacity:.7;font-size:12px;margin-left:6px}
+header .sum{font-size:12.5px;opacity:.85}
+nav{background:var(--panel);border-right:1px solid var(--line);overflow:auto;padding:6px 0 20px}
+nav button{display:block;width:100%;text-align:left;border:0;border-left:3px solid transparent;background:none;padding:7px 18px 7px 15px;font:inherit;color:var(--ink);cursor:pointer}
+nav button:hover:not(:disabled){background:var(--accent2)}
+nav button.on{background:var(--accent2);color:var(--accent);font-weight:600;border-left-color:var(--accent)}
+nav button:disabled{color:#b9b9b9;cursor:default}
+nav .grp{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:14px 18px 4px}
+main{overflow:auto;padding:18px 24px 40px}
+section{display:none;max-width:1400px}
+section.on{display:block}
+h2{margin:0 0 4px;font-size:20px}
+h3{margin:0 0 8px;font-size:15px}
+.intro{color:var(--muted);margin:0 0 14px;max-width:920px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px;margin-bottom:14px}
+.bar{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;margin-bottom:10px}
+.bar label{display:flex;flex-direction:column;font-size:12px;color:var(--muted);gap:3px}
+.bar label.chk{flex-direction:row;align-items:center;gap:6px;color:var(--ink);font-size:13px;padding-bottom:6px}
+input[type=text],input[type=number],select,textarea{font:inherit;padding:5px 7px;border:1px solid #cfccc5;border-radius:5px;background:#fff;color:var(--ink)}
+input[type=number]{width:84px}
+input[type=text]{min-width:200px}
+textarea{width:100%;font-family:ui-monospace,Consolas,"Courier New",monospace;font-size:12.5px;resize:vertical}
+button.b{font:inherit;padding:6px 14px;border-radius:5px;border:1px solid var(--accent);background:var(--accent);color:#fff;cursor:pointer;font-weight:600}
+button.b:hover{filter:brightness(1.12)}
+button.b2{font:inherit;padding:5px 11px;border-radius:5px;border:1px solid #cfccc5;background:#fff;color:var(--ink);cursor:pointer;font-size:12.5px}
+button.b2:hover{background:#f0efe9}
+button.b2.on{background:var(--accent2);border-color:var(--accent);color:var(--accent);font-weight:600}
+table.t{border-collapse:collapse;width:100%;font-size:13px}
+table.t th{position:sticky;top:0;background:#f3f2ee;text-align:left;padding:5px 8px;border-bottom:1px solid var(--line);cursor:pointer;user-select:none;white-space:nowrap;z-index:1}
+table.t td{padding:3px 8px;border-bottom:1px solid #f0eee9;vertical-align:top}
+table.t td.n,table.t th.n{text-align:right;font-variant-numeric:tabular-nums}
+table.t tr.click{cursor:pointer}
+table.t tr.click:hover td{background:var(--accent2)}
+.tw{overflow:auto;border:1px solid var(--line);border-radius:6px;background:#fff}
+.tools{display:flex;gap:8px;align-items:center;margin:4px 0 8px;flex-wrap:wrap}
+.tools input{min-width:160px}
+.muted{color:var(--muted)}
+.stop{color:#9a9a9a}
+.pos{color:var(--pos);font-weight:600}
+.neg{color:var(--neg);font-weight:600}
+.kwic{font-family:ui-monospace,Consolas,"Courier New",monospace;font-size:12.5px}
+.kwic td{white-space:nowrap}
+.kwic td.l{text-align:right;max-width:46ch;overflow:hidden;text-overflow:ellipsis;direction:rtl}
+.kwic td.l span{direction:ltr;unicode-bidi:embed}
+.kwic td.r{max-width:46ch;overflow:hidden;text-overflow:ellipsis}
+.kwic td.p{font-weight:700;color:var(--accent);text-align:center;padding:3px 6px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:1100px){.grid2{grid-template-columns:1fr}}
+.stats{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 14px;min-width:140px}
+.stat b{display:block;font-size:21px;font-variant-numeric:tabular-nums}
+.stat span{font-size:12px;color:var(--muted)}
+svg.chart{width:100%;height:auto;display:block}
+.chartbox{border:1px solid var(--line);border-radius:6px;background:#fff;overflow:hidden}
+#busy{position:fixed;inset:0;background:rgba(246,245,242,.65);display:none;align-items:center;justify-content:center;font-size:16px;z-index:20}
+#busy div{background:#fff;border:1px solid var(--line);padding:14px 22px;border-radius:8px;box-shadow:0 4px 18px rgba(0,0,0,.08)}
+.pill{display:inline-block;background:#eef1f4;border-radius:10px;padding:0 8px;font-size:12px;margin:1px 2px 1px 0}
+.seg{border-left:4px solid #ccc;padding:6px 12px;margin:8px 0;font-size:13.5px;background:#fbfaf8}
+.seg .muted{font-size:12px}
+code{background:#f0efe9;padding:1px 5px;border-radius:3px;font-size:12.5px}
+.ctxbox{font-size:14px;line-height:1.6;background:#fbfaf8;border:1px solid var(--line);border-radius:6px;padding:10px 14px;margin-top:10px;white-space:pre-wrap}
+mark{background:#ffe7a3;padding:0 1px}
+.help h3{margin-top:18px}
+.help p,.help li{max-width:900px}
+.legend{display:flex;flex-wrap:wrap;gap:10px;font-size:12.5px;margin:6px 0}
+.legend i{display:inline-block;width:11px;height:11px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+.empty{color:var(--muted);padding:20px;text-align:center}
+</style>
+</head>
+<body>
+<header><h1>Lexicomesure<small>analyse lexicométrique de corpus</small></h1><div class="sum" id="sum">Aucun corpus chargé</div></header>
+
+<nav id="nav">
+  <div class="grp">Corpus</div>
+  <button data-p="corpus" class="on">Importer un corpus</button>
+  <button data-p="stats" data-need disabled>Statistiques</button>
+  <button data-p="dico" data-need disabled>Dictionnaire des formes</button>
+  <div class="grp">Lecture du texte</div>
+  <button data-p="concord" data-need disabled>Concordancier et cooccurrents</button>
+  <button data-p="repeat" data-need disabled>Segments répétés</button>
+  <div class="grp">Contrastes</div>
+  <button data-p="specif" data-need disabled>Spécificités</button>
+  <button data-p="ventil" data-need disabled>Ventilation</button>
+  <button data-p="afc" data-need disabled>Analyse factorielle (AFC)</button>
+  <div class="grp">Classification et graphes</div>
+  <button data-p="chd" data-need disabled>Classification (Reinert)</button>
+  <button data-p="simil" data-need disabled>Analyse de similitudes</button>
+  <button data-p="cloud" data-need disabled>Nuage de mots</button>
+  <div class="grp">Réglages</div>
+  <button data-p="params">Paramètres et mots-outils</button>
+  <button data-p="help">Aide et méthodes</button>
+</nav>
+
+<main>
+<!-- ===================== CORPUS ===================== -->
+<section id="p-corpus" class="on">
+  <h2>Importer un corpus</h2>
+  <p class="intro">Collez un texte ou ouvrez un ou plusieurs fichiers <code>.txt</code>. Le format Iramuteq est reconnu : chaque texte commence par une ligne étoilée, par exemple <code>**** *sexe_f *age_jeune</code>. Si un fichier n'a pas de ligne étoilée, il devient un texte unique, avec la variable <code>*fichier</code>. Les lignes thématiques <code>-*theme</code> sont ignorées.</p>
+  <div class="card">
+    <div class="bar">
+      <label>Fichiers texte<input type="file" id="files" multiple accept=".txt,text/plain"></label>
+      <label>Encodage des fichiers<select id="enc"><option value="utf-8">UTF-8</option><option value="windows-1252">Windows-1252 (Latin-1)</option></select></label>
+      <button class="b2" id="demo">Charger le corpus d'exemple</button>
+      <button class="b2" id="clear">Vider</button>
+    </div>
+    <textarea id="raw" rows="16" placeholder="**** *locuteur_a *annee_2020&#10;Votre premier texte…&#10;&#10;**** *locuteur_b *annee_2021&#10;Votre deuxième texte…"></textarea>
+    <div class="bar" style="margin-top:10px">
+      <label class="chk"><input type="checkbox" id="optLower" checked> Tout mettre en minuscules</label>
+      <label class="chk"><input type="checkbox" id="optPlural"> Regrouper singulier et pluriel (approximatif)</label>
+      <label class="chk"><input type="checkbox" id="optNum" checked> Traiter les nombres comme mots-outils</label>
+      <span style="flex:1"></span>
+      <button class="b" id="analyse">Analyser le corpus</button>
+    </div>
+  </div>
+  <div id="textsList"></div>
+</section>
+
+<!-- ===================== STATS ===================== -->
+<section id="p-stats">
+  <h2>Statistiques lexicales</h2>
+  <p class="intro">Les mesures de base du corpus, la courbe de Zipf (rang et fréquence en échelle logarithmique) et la croissance du vocabulaire au fil du texte.</p>
+  <div id="statsOut"></div>
+</section>
+
+<!-- ===================== DICO ===================== -->
+<section id="p-dico">
+  <h2>Dictionnaire des formes</h2>
+  <p class="intro">Toutes les formes graphiques du corpus avec leur fréquence. Les mots-outils sont en gris. Cliquez sur une forme pour ouvrir ses concordances.</p>
+  <div class="bar">
+    <label>Afficher<select id="dShow"><option value="all">Toutes les formes</option><option value="full">Formes pleines seulement</option><option value="stop">Mots-outils seulement</option><option value="hapax">Hapax seulement</option></select></label>
+  </div>
+  <div id="dicoOut"></div>
+</section>
+
+<!-- ===================== CONCORDANCES ===================== -->
+<section id="p-concord">
+  <h2>Concordancier et cooccurrents</h2>
+  <p class="intro">Recherchez une forme, plusieurs formes séparées par <code>|</code>, une troncature avec <code>*</code> (par exemple <code>travail*</code>), une expression de plusieurs mots (<code>pistes cyclables</code>) ou une expression régulière entre barres obliques (<code>/vélos?/</code>). Les cooccurrents sont calculés dans une fenêtre autour du pôle, avec un score de spécificité (modèle hypergéométrique).</p>
+  <div class="card">
+    <div class="bar">
+      <label>Recherche<input type="text" id="cQuery" placeholder="ex. : quartier, bus|tramway, travail*"></label>
+      <label>Contexte (mots)<input type="number" id="cCtx" value="12" min="2" max="60"></label>
+      <label>Tri<select id="cSort"><option value="order">Ordre du texte</option><option value="left">Mot à gauche</option><option value="right">Mot à droite</option></select></label>
+      <label>Fenêtre des cooccurrents (± mots)<input type="number" id="cWin" value="10" min="1" max="100"></label>
+      <button class="b" id="cGo">Chercher</button>
+    </div>
+  </div>
+  <div id="concordOut"></div>
+</section>
+
+<!-- ===================== SEGMENTS REPETES ===================== -->
+<section id="p-repeat">
+  <h2>Segments répétés</h2>
+  <p class="intro">Les suites de formes qui reviennent plusieurs fois sans franchir de ponctuation. Cliquez sur un segment pour voir ses concordances.</p>
+  <div class="card"><div class="bar">
+    <label>Longueur min.<input type="number" id="rMin" value="2" min="2" max="20"></label>
+    <label>Longueur max.<input type="number" id="rMax" value="8" min="2" max="30"></label>
+    <label>Fréquence min.<input type="number" id="rFreq" value="2" min="2"></label>
+    <label class="chk"><input type="checkbox" id="rFull" checked> Au moins une forme pleine</label>
+    <label class="chk"><input type="checkbox" id="rMax2" checked> Masquer les segments inclus dans un plus long de même fréquence</label>
+    <button class="b" id="rGo">Calculer</button>
+  </div></div>
+  <div id="repeatOut"></div>
+</section>
+
+<!-- ===================== SPECIFICITES ===================== -->
+<section id="p-specif">
+  <h2>Spécificités</h2>
+  <p class="intro">Pour chaque partie du corpus, les formes sur-employées (score positif) ou sous-employées (score négatif) par rapport à l'ensemble, selon le modèle hypergéométrique de Lafon. Un score de 2 correspond à une probabilité de 1 %, un score de 3 à 1 pour mille.</p>
+  <div class="card"><div class="bar">
+    <label>Partition<select id="sPart" class="partSel"></select></label>
+    <label>Nb de tranches (si tranches)<input type="number" id="sSlices" value="10" min="2" max="200"></label>
+    <label>Fréquence min.<input type="number" id="sMin" value="3" min="1"></label>
+    <label>Seuil de score<input type="number" id="sSeuil" value="2" min="0" step="0.5"></label>
+    <button class="b" id="sGo">Calculer</button>
+  </div>
+  <div class="bar" id="sViewBar" style="display:none">
+    <label>Afficher<select id="sView"></select></label>
+  </div></div>
+  <div id="specifOut"></div>
+</section>
+
+<!-- ===================== VENTILATION ===================== -->
+<section id="p-ventil">
+  <h2>Ventilation</h2>
+  <p class="intro">La répartition d'une ou plusieurs formes dans les parties du corpus : fréquence relative (pour 10 000 occurrences) et score de spécificité. Avec les tranches égales, on obtient l'évolution au fil du texte.</p>
+  <div class="card"><div class="bar">
+    <label>Formes (séparées par une virgule pour comparer)<input type="text" id="vQuery" placeholder="ex. : bus|tramway, vélo*, parc" style="min-width:320px"></label>
+    <label>Partition<select id="vPart" class="partSel"></select></label>
+    <label>Nb de tranches (si tranches)<input type="number" id="vSlices" value="10" min="2" max="200"></label>
+    <label>Mesure<select id="vMeasure"><option value="rel">Fréquence relative</option><option value="score">Score de spécificité</option><option value="abs">Fréquence absolue</option></select></label>
+    <button class="b" id="vGo">Afficher</button>
+  </div></div>
+  <div id="ventilOut"></div>
+</section>
+
+<!-- ===================== AFC ===================== -->
+<section id="p-afc">
+  <h2>Analyse factorielle des correspondances</h2>
+  <p class="intro">L'AFC du tableau lexical (formes × parties) projette sur un plan les parties et les formes qui s'attirent. Il faut au moins 3 parties. Molette pour zoomer, glisser pour déplacer, double-clic pour recentrer.</p>
+  <div class="card"><div class="bar">
+    <label>Partition<select id="aPart" class="partSel"></select></label>
+    <label>Nb de tranches (si tranches)<input type="number" id="aSlices" value="10" min="3" max="200"></label>
+    <label>Nb de formes (les plus fréquentes)<input type="number" id="aN" value="150" min="10" max="400"></label>
+    <label>Fréquence min.<input type="number" id="aMin" value="3" min="1"></label>
+    <label class="chk"><input type="checkbox" id="aStop"> Inclure les mots-outils</label>
+    <button class="b" id="aGo">Calculer</button>
+  </div>
+  <div class="bar" id="aPlotBar" style="display:none">
+    <label>Axe horizontal<select id="aX"></select></label>
+    <label>Axe vertical<select id="aY"></select></label>
+    <label>Afficher<select id="aShow"><option value="both">Formes et parties</option><option value="cols">Parties seulement</option><option value="rows">Formes seulement</option></select></label>
+    <label>Formes affichées (les plus contributives)<input type="number" id="aLab" value="80" min="5" max="400"></label>
+  </div></div>
+  <div id="afcOut"></div>
+</section>
+
+<!-- ===================== CHD ===================== -->
+<section id="p-chd">
+  <h2>Classification hiérarchique descendante (méthode Reinert)</h2>
+  <p class="intro">Le corpus est découpé en segments de texte d'une quarantaine de mots. Les segments sont ensuite partagés en classes de vocabulaire homogène, par bipartitions successives fondées sur l'AFC et le khi². Chaque classe est décrite par ses formes et ses variables les plus caractéristiques.</p>
+  <div class="card"><div class="bar">
+    <label>Taille des segments (mots)<input type="number" id="kSize" value="40" min="8" max="400"></label>
+    <label>Nombre de classes terminales<input type="number" id="kK" value="5" min="2" max="20"></label>
+    <label>Fréquence min. des formes actives<input type="number" id="kMin" value="3" min="1"></label>
+    <label>Effectif min. d'une classe (0 = auto)<input type="number" id="kMinSeg" value="0" min="0"></label>
+    <button class="b" id="kGo">Lancer la classification</button>
+  </div></div>
+  <div id="chdOut"></div>
+</section>
+
+<!-- ===================== SIMILITUDES ===================== -->
+<section id="p-simil">
+  <h2>Analyse de similitudes</h2>
+  <p class="intro">Un graphe des formes pleines les plus fréquentes : deux formes sont liées quand elles apparaissent souvent dans les mêmes segments. Seul l'arbre maximum est conservé, ce qui fait ressortir la structure du discours. Les nœuds se déplacent à la souris.</p>
+  <div class="card"><div class="bar">
+    <label>Nombre de formes<input type="number" id="gN" value="60" min="5" max="200"></label>
+    <label>Unité de cooccurrence<select id="gUnit"><option value="seg">Segment de texte</option><option value="text">Texte entier</option></select></label>
+    <label>Indice<select id="gIdx"><option value="cooc">Cooccurrence</option><option value="jaccard">Jaccard</option></select></label>
+    <label>Couleurs<select id="gCol"><option value="comm">Communautés</option><option value="chd">Classes de la CHD</option><option value="none">Aucune</option></select></label>
+    <label class="chk"><input type="checkbox" id="gW"> Afficher les indices sur les liens</label>
+    <button class="b" id="gGo">Construire le graphe</button>
+  </div></div>
+  <div id="similOut"></div>
+</section>
+
+<!-- ===================== NUAGE ===================== -->
+<section id="p-cloud">
+  <h2>Nuage de mots</h2>
+  <p class="intro">Les formes les plus fréquentes, avec une taille proportionnelle à leur fréquence.</p>
+  <div class="card"><div class="bar">
+    <label>Nombre de formes<input type="number" id="wN" value="100" min="10" max="400"></label>
+    <label class="chk"><input type="checkbox" id="wStop" checked> Exclure les mots-outils</label>
+    <label>Source<select id="wSrc"><option value="all">Tout le corpus</option></select></label>
+    <button class="b" id="wGo">Dessiner</button>
+  </div></div>
+  <div id="cloudOut"></div>
+</section>
+
+<!-- ===================== PARAMS ===================== -->
+<section id="p-params">
+  <h2>Paramètres et mots-outils</h2>
+  <p class="intro">La liste des mots-outils (articles, pronoms, prépositions, auxiliaires…) sert à distinguer les formes pleines. Elle est exclue de la classification, des similitudes et du nuage, et grisée ailleurs. Modifiez-la puis cliquez de nouveau sur « Analyser le corpus ».</p>
+  <div class="card">
+    <textarea id="stopList" rows="18"></textarea>
+    <div class="bar" style="margin-top:10px">
+      <button class="b2" id="stopReset">Rétablir la liste par défaut</button>
+      <button class="b" id="stopApply">Appliquer et relancer l'analyse</button>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== AIDE ===================== -->
+<section id="p-help" class="help">
+  <h2>Aide et méthodes</h2>
+  <p class="intro">Lexicomesure reprend les grandes familles d'analyses de la lexicométrie française. Tout est calculé dans votre navigateur : aucune donnée ne quitte votre ordinateur et aucune connexion n'est nécessaire.</p>
+  <div class="card">
+    <h3>Préparer un corpus</h3>
+    <p>Enregistrez vos textes en <code>.txt</code>, de préférence en UTF-8. Pour comparer des groupes, faites précéder chaque texte d'une ligne étoilée au format Iramuteq :</p>
+    <pre><code>**** *auteur_hugo *genre_roman *decennie_1860
+Texte du premier document…
+
+**** *auteur_zola *genre_roman *decennie_1880
+Texte du deuxième document…</code></pre>
+    <p>Chaque variable s'écrit <code>*nom_modalite</code>, sans espace ni accent de préférence. Ces variables servent de partitions pour les spécificités, la ventilation et l'AFC, et sont croisées avec les classes de la CHD.</p>
+    <h3>Les analyses</h3>
+    <ul>
+      <li><b>Statistiques et dictionnaire</b> (Lexico, Hyperbase) : occurrences, formes, hapax, loi de Zipf, croissance du vocabulaire.</li>
+      <li><b>Concordancier et cooccurrents</b> (Le Trameur, Lexico, SATO) : chaque occurrence dans son contexte, et les formes qui apparaissent anormalement souvent autour du pôle choisi.</li>
+      <li><b>Segments répétés</b> (Lexico) : suites de formes répétées, sans franchir la ponctuation.</li>
+      <li><b>Spécificités</b> (Lexico, Hyperbase, Le Trameur) : modèle hypergéométrique de Lafon. Le score vaut −log<sub>10</sub>(p) ; il est positif pour un sur-emploi et négatif pour un sous-emploi.</li>
+      <li><b>Ventilation</b> (Hyperbase, Le Trameur) : répartition d'une forme dans les parties ou les tranches du texte.</li>
+      <li><b>AFC</b> (DTM-Vic, Lexico, Hyperbase) : analyse des correspondances du tableau lexical, avec valeurs propres, coordonnées, contributions et cos².</li>
+      <li><b>Classification de Reinert</b> (Iramuteq, Alceste) : découpage en segments, tableau de présence et d'absence des formes pleines, bipartitions successives de la plus grande classe selon le premier axe de l'AFC, puis réaffectation des segments pour maximiser le khi². Les classes sont décrites par le khi² d'association de chaque forme et de chaque modalité.</li>
+      <li><b>Analyse de similitudes</b> (Iramuteq) : arbre maximum des cooccurrences entre formes pleines, avec détection de communautés.</li>
+    </ul>
+    <h3>Limites à connaître</h3>
+    <ul>
+      <li>Il n'y a pas de lemmatisation par dictionnaire : les analyses portent sur les formes graphiques, comme dans Lexico. L'option « Regrouper singulier et pluriel » ne fusionne que les formes en -s ou -x dont le singulier existe dans le corpus.</li>
+      <li>La classification fait une CHD simple. Elle ne fait pas la double classification sur deux tailles de segments qu'Iramuteq propose.</li>
+      <li>Les très gros corpus (plusieurs millions de mots) peuvent ralentir le navigateur.</li>
+    </ul>
+    <h3>Exports</h3>
+    <p>Chaque tableau s'exporte en CSV (séparateur point-virgule, lisible par Excel et LibreOffice). Chaque graphique s'exporte en SVG (vectoriel, modifiable) ou en PNG.</p>
+  </div>
+</section>
+</main>
+<div id="busy"><div>Calcul en cours…</div></div>
+
+<!-- =====================================================================
+     MOTEUR D'ANALYSE (sans accès au DOM)
+     ===================================================================== -->
+<script id="engine">
+const LX = (() => {
+"use strict";
+const DEFAULT_STOP = `a à â abord afin ah ai aie aient aies ait alors après as assez au aucun aucune aujourd'hui auquel aussi autre autres aux auxquelles auxquels avaient avais avait avant avec avez aviez avions avoir avons ayant ayez ayons bah beaucoup bien c' ça car ce ceci cela celle celles celui cependant certain certaine certaines certains ces cet cette ceux chacun chacune chaque chez ci comme comment d' dans de dedans dehors déjà depuis des dès desquelles desquels dessous dessus devant doit donc dont du duquel durant elle elles en encore entre es est et étaient étais était étant été êtes étiez étions être eu eue eues eurent eus eut eux fait faire fais faut fois font furent fut hors ici il ils j' je jusqu' jusque l' la là laquelle le lequel les lesquelles lesquels leur leurs lors lorsqu' lorsque lui m' ma mais me même mêmes mes moi moins mon n' ne ni non nos notre nous on ont or ou où oui par parce pas pendant peu peut peuvent plus plutôt pour pourquoi pourrait puis puisqu' puisque qu' quand que quel quelle quelles quels qui quoi s' sa sans se sera serait seront ses si sien sienne soi soient sois soit sommes son sont sous suis sur t' ta tant te tes toi ton tous tout toute toutes très tu un une unes uns vers via voici voilà vont vos votre vous y`;
+
+function parseStop(txt){
+  return new Set(normalize(txt).toLocaleLowerCase('fr').split(/[\s,;]+/).filter(Boolean));
+}
+function normalize(t){
+  return t.replace(/\r\n?/g,'\n').replace(/[’‘ʼ`´]/g,"'").replace(/[  ]/g,' ');
+}
+
+/* ---------- Lecture d'un corpus au format Iramuteq ---------- */
+function parseCorpus(raw){
+  const lines = normalize(raw).split('\n');
+  const out = []; let cur = null;
+  for(const line of lines){
+    const m = /^\s*\*{4}(.*)$/.exec(line);
+    if(m){
+      cur = {vars:{}, lines:[]};
+      for(const tok of m[1].trim().split(/\s+/)){
+        if(tok.length>1 && tok[0]==='*'){
+          const t = tok.slice(1), k = t.indexOf('_');
+          if(k>0) cur.vars[t.slice(0,k)] = t.slice(k+1); else cur.vars[t] = 'oui';
+        }
+      }
+      out.push(cur); continue;
+    }
+    if(/^\s*-\*\S/.test(line)) continue;
+    if(!cur){ cur = {vars:{}, lines:[]}; out.push(cur); }
+    cur.lines.push(line);
+  }
+  return out.map(t=>({vars:t.vars, text:t.lines.join('\n').trim()}))
+            .filter(t=>t.text.length>0)
+            .map((t,i)=>({...t, name: t.vars.fichier ? t.vars.fichier : 'T'+(i+1)}));
+}
+
+/* ---------- Segmentation en occurrences ---------- */
+const TOK_RE = /(aujourd'hui|[\p{L}\p{N}]+(?:-[\p{L}\p{N}]+)*(?:'(?=\p{L}))?)|([.!?…;:]+)|([,()«»"“”\[\]{}—–\/]+)|(\n[ \t]*\n)/giu;
+
+function buildCorpus(texts, opt){
+  const lower = opt.lower !== false, stop = opt.stop || new Set();
+  const raw = [], tText = [], tStart = [], tEnd = [], tBrk = [];
+  texts.forEach((tx,ti)=>{
+    let brk = 3, m; TOK_RE.lastIndex = 0;
+    tx.tokFirst = raw.length;
+    while((m = TOK_RE.exec(tx.text))){
+      if(m[1]){
+        let w = m[1]; if(lower) w = w.toLocaleLowerCase('fr');
+        raw.push(w); tText.push(ti); tStart.push(m.index); tEnd.push(m.index+m[1].length); tBrk.push(brk); brk = 0;
+      } else if(m[2] || m[4]) brk = Math.max(brk,2);
+      else brk = Math.max(brk,1);
+    }
+    tx.tokLast = raw.length;
+  });
+  const cnt = new Map(); for(const w of raw) cnt.set(w,(cnt.get(w)||0)+1);
+  const merge = new Map();
+  if(opt.plural){
+    for(const w of cnt.keys()){
+      if(w.length>3 && /[sx]$/.test(w) && !stop.has(w)){
+        const b = w.slice(0,-1);
+        if(cnt.has(b) && !stop.has(b)) merge.set(w,b);
+      }
+    }
+  }
+  const fid = new Map(), forms = [], N = raw.length, tokForm = new Int32Array(N), variants = [];
+  for(let i=0;i<N;i++){
+    const orig = raw[i], w = merge.get(orig) || orig;
+    let id = fid.get(w);
+    if(id===undefined){ id = forms.length; fid.set(w,id); forms.push(w); variants.push(new Set()); }
+    if(orig!==w) variants[id].add(orig);
+    tokForm[i] = id;
+  }
+  const F = forms.length, freq = new Int32Array(F);
+  for(let i=0;i<N;i++) freq[tokForm[i]]++;
+  const isStop = new Uint8Array(F);
+  for(let f=0;f<F;f++) if(stop.has(forms[f]) || (opt.numStop!==false && /^[\p{N}]+([-.,][\p{N}]+)*$/u.test(forms[f]))) isStop[f] = 1;
+  const vars = {};
+  texts.forEach(t=>{ for(const [k,v] of Object.entries(t.vars)){ (vars[k] ||= new Set()).add(v); } });
+  for(const k in vars) vars[k] = [...vars[k]].sort((a,b)=>a.localeCompare(b,'fr',{numeric:true}));
+  const lf = new Float64Array(N+2);
+  for(let i=2;i<N+2;i++) lf[i] = lf[i-1] + Math.log(i);
+  return {texts, forms, fid, freq, isStop, N, F, tokForm,
+    tokText:Int32Array.from(tText), tokStart:Int32Array.from(tStart), tokEnd:Int32Array.from(tEnd), tokBrk:Uint8Array.from(tBrk),
+    vars, variants:variants.map(s=>[...s]), lf};
+}
+
+/* ---------- Statistiques ---------- */
+function stats(C){
+  const fr = Array.from(C.freq).sort((a,b)=>b-a);
+  let hapax = 0, full = 0, fullOcc = 0;
+  for(let f=0;f<C.F;f++){ if(C.freq[f]===1) hapax++; if(!C.isStop[f]){ full++; fullOcc += C.freq[f]; } }
+  const zipf = []; let last = 0;
+  for(let r=1;r<=fr.length;r++){
+    if(r<=50 || r===fr.length || Math.log(r)-Math.log(last) > 0.02){ zipf.push([r,fr[r-1]]); last = r; }
+  }
+  const growth = [], seen = new Uint8Array(C.F), step = Math.max(1, Math.floor(C.N/400)); let V = 0;
+  for(let i=0;i<C.N;i++){
+    if(!seen[C.tokForm[i]]){ seen[C.tokForm[i]] = 1; V++; }
+    if((i+1)%step===0 || i===C.N-1) growth.push([i+1,V]);
+  }
+  return {N:C.N, F:C.F, hapax, full, fullOcc, maxF: fr[0]||0, zipf, growth};
+}
+
+/* ---------- Partitions ---------- */
+function partition(C, spec){
+  const N = C.N, tokPart = new Int32Array(N); let labels, textPart = null;
+  if(spec.type==='var'){
+    const mods = C.vars[spec.name].slice();
+    const undef = C.texts.some(t=>!(spec.name in t.vars));
+    if(undef) mods.push('(non défini)');
+    labels = mods;
+    textPart = C.texts.map(t=> (spec.name in t.vars) ? mods.indexOf(t.vars[spec.name]) : mods.length-1);
+  } else if(spec.type==='text'){
+    labels = C.texts.map(t=>t.name);
+    textPart = C.texts.map((t,i)=>i);
+  }
+  if(textPart){ for(let i=0;i<N;i++) tokPart[i] = textPart[C.tokText[i]]; }
+  else {
+    const n = Math.max(1, Math.min(spec.n||10, N));
+    labels = Array.from({length:n},(_,k)=>'Tranche '+(k+1));
+    for(let i=0;i<N;i++) tokPart[i] = Math.floor(i*n/N);
+  }
+  const sizes = new Float64Array(labels.length);
+  for(let i=0;i<N;i++) sizes[tokPart[i]]++;
+  return {labels, tokPart, sizes, P:labels.length, spec};
+}
+
+function lexTable(C, part, ids){
+  const P = part.P, idx = new Int32Array(C.F).fill(-1);
+  ids.forEach((f,i)=>idx[f]=i);
+  const M = new Float64Array(ids.length*P);
+  for(let i=0;i<C.N;i++){ const r = idx[C.tokForm[i]]; if(r>=0) M[r*P+part.tokPart[i]]++; }
+  return M;
+}
+
+/* ---------- Modèle hypergéométrique (Lafon) ---------- */
+function logH(k,T,f,t,lf){
+  return lf[f]-lf[k]-lf[f-k] + lf[T-f]-lf[t-k]-lf[T-f-t+k] - (lf[T]-lf[t]-lf[T-t]);
+}
+function specif(k,T,f,t,lf){
+  if(f<=0 || t<=0 || T<=0) return 0;
+  const mean = f*t/T, lo = Math.max(0,f+t-T), hi = Math.min(f,t);
+  const lp = logH(k,T,f,t,lf);
+  let s = 1, term = 1;
+  if(k>=mean){
+    for(let x=k;x<hi;x++){ term *= (f-x)*(t-x)/((x+1)*(T-f-t+x+1)); s += term; if(term < s*1e-16) break; }
+    return Math.max(0, -(lp+Math.log(s))/Math.LN10);
+  } else {
+    for(let x=k;x>lo;x--){ term *= x*(T-f-t+x)/((f-x+1)*(t-x+1)); s += term; if(term < s*1e-16) break; }
+    return Math.min(0, (lp+Math.log(s))/Math.LN10);
+  }
+}
+function specificities(C, part, minF){
+  const ids = []; for(let f=0;f<C.F;f++) if(C.freq[f]>=minF) ids.push(f);
+  const P = part.P, M = lexTable(C, part, ids), S = new Float64Array(M.length);
+  for(let r=0;r<ids.length;r++){
+    const f = C.freq[ids[r]];
+    for(let p=0;p<P;p++) S[r*P+p] = specif(M[r*P+p], C.N, f, part.sizes[p], C.lf);
+  }
+  return {ids, M, S, P};
+}
+
+/* ---------- Algèbre : valeurs propres (Jacobi) et AFC ---------- */
+function jacobiEigen(A, n){
+  A = Float64Array.from(A);
+  const V = new Float64Array(n*n); for(let i=0;i<n;i++) V[i*n+i] = 1;
+  for(let sweep=0; sweep<100; sweep++){
+    let off = 0;
+    for(let p=0;p<n;p++) for(let q=p+1;q<n;q++) off += A[p*n+q]*A[p*n+q];
+    if(off < 1e-24) break;
+    for(let p=0;p<n;p++) for(let q=p+1;q<n;q++){
+      const apq = A[p*n+q]; if(Math.abs(apq) < 1e-300) continue;
+      const theta = (A[q*n+q]-A[p*n+p])/(2*apq);
+      const t = Math.sign(theta||1)/(Math.abs(theta)+Math.sqrt(theta*theta+1));
+      const c = 1/Math.sqrt(t*t+1), s = t*c;
+      for(let k=0;k<n;k++){ const akp=A[k*n+p], akq=A[k*n+q]; A[k*n+p]=c*akp-s*akq; A[k*n+q]=s*akp+c*akq; }
+      for(let k=0;k<n;k++){ const apk=A[p*n+k], aqk=A[q*n+k]; A[p*n+k]=c*apk-s*aqk; A[q*n+k]=s*apk+c*aqk; }
+      for(let k=0;k<n;k++){ const vkp=V[k*n+p], vkq=V[k*n+q]; V[k*n+p]=c*vkp-s*vkq; V[k*n+q]=s*vkp+c*vkq; }
+    }
+  }
+  const order = Array.from({length:n},(_,i)=>i).sort((a,b)=>A[b*n+b]-A[a*n+a]);
+  return {values: order.map(i=>A[i*n+i]), vectors: order.map(i=>{ const v=new Float64Array(n); for(let k=0;k<n;k++) v[k]=V[k*n+i]; return v; })};
+}
+
+function ca(M, I, J, nAx){
+  nAx = nAx || 6;
+  const rs = new Float64Array(I), cs = new Float64Array(J); let n = 0;
+  for(let i=0;i<I;i++) for(let j=0;j<J;j++){ const v=M[i*J+j]; rs[i]+=v; cs[j]+=v; n+=v; }
+  const ri = [], cj = [];
+  for(let i=0;i<I;i++) if(rs[i]>0) ri.push(i);
+  for(let j=0;j<J;j++) if(cs[j]>0) cj.push(j);
+  const I2 = ri.length, J2 = cj.length;
+  if(I2<2 || J2<2) return null;
+  const r = ri.map(i=>rs[i]/n), c = cj.map(j=>cs[j]/n);
+  const S = new Float64Array(I2*J2);
+  for(let a=0;a<I2;a++) for(let b=0;b<J2;b++){
+    const p = M[ri[a]*J+cj[b]]/n, e = r[a]*c[b];
+    S[a*J2+b] = (p-e)/Math.sqrt(e);
+  }
+  let total = 0; for(let x=0;x<S.length;x++) total += S[x]*S[x];
+  const K = Math.min(I2,J2);
+  const G = new Float64Array(K*K);
+  if(J2<=I2){
+    for(let p=0;p<J2;p++) for(let q=p;q<J2;q++){ let s=0; for(let a=0;a<I2;a++) s+=S[a*J2+p]*S[a*J2+q]; G[p*K+q]=G[q*K+p]=s; }
+  } else {
+    for(let p=0;p<I2;p++) for(let q=p;q<I2;q++){ let s=0; for(let b=0;b<J2;b++) s+=S[p*J2+b]*S[q*J2+b]; G[p*K+q]=G[q*K+p]=s; }
+  }
+  const eg = jacobiEigen(G, K);
+  const eig = [], U = [], Vv = [];
+  for(let k=0;k<K && eig.length<nAx;k++){
+    const lam = eg.values[k]; if(lam < 1e-12*Math.max(1,total)) break;
+    const sig = Math.sqrt(lam), vec = eg.vectors[k];
+    let u, v;
+    if(J2<=I2){
+      v = vec; u = new Float64Array(I2);
+      for(let a=0;a<I2;a++){ let s=0; for(let b=0;b<J2;b++) s+=S[a*J2+b]*v[b]; u[a]=s/sig; }
+    } else {
+      u = vec; v = new Float64Array(J2);
+      for(let b=0;b<J2;b++){ let s=0; for(let a=0;a<I2;a++) s+=S[a*J2+b]*u[a]; v[b]=s/sig; }
+    }
+    // orientation stable : la plus grande coordonnée de colonne en positif
+    let mx=0, sg=1; for(let b=0;b<J2;b++) if(Math.abs(v[b])>mx){ mx=Math.abs(v[b]); sg=Math.sign(v[b]); }
+    if(sg<0){ for(let a=0;a<I2;a++) u[a]=-u[a]; for(let b=0;b<J2;b++) v[b]=-v[b]; }
+    eig.push(lam); U.push(u); Vv.push(v);
+  }
+  const nA = eig.length;
+  function side(idx, mass, vecs, dist){
+    return idx.map((orig,a)=>{
+      const coords=[], ctr=[], cos2=[];
+      for(let k=0;k<nA;k++){
+        const x = vecs[k][a]*Math.sqrt(eig[k])/Math.sqrt(mass[a]);
+        coords.push(x); ctr.push(vecs[k][a]*vecs[k][a]); cos2.push(dist[a]>0 ? x*x/dist[a] : 0);
+      }
+      return {index:orig, mass:mass[a], coords, ctr, cos2, inertia: mass[a]*dist[a]/total};
+    });
+  }
+  const dr = r.map((m,a)=>{ let s=0; for(let b=0;b<J2;b++){ const v=S[a*J2+b]; s+=v*v; } return s/m; });
+  const dc = c.map((m,b)=>{ let s=0; for(let a=0;a<I2;a++){ const v=S[a*J2+b]; s+=v*v; } return s/m; });
+  return {eig, total, rows: side(ri, r, U, dr), cols: side(cj, c, Vv, dc), nAx:nA};
+}
+
+/* ---------- Segments de texte ---------- */
+function segments(C, size){
+  const segs = [];
+  C.texts.forEach((t,ti)=>{
+    let s = t.tokFirst;
+    for(let i=t.tokFirst;i<t.tokLast;i++){
+      const len = i-s; if(len===0) continue;
+      const b = C.tokBrk[i];
+      if((len>=size && b>=2) || (len>=size*1.25 && b>=1) || len>=size*1.6){ segs.push({start:s,end:i,text:ti}); s = i; }
+    }
+    if(t.tokLast>s){
+      const last = segs[segs.length-1];
+      if(last && last.text===ti && t.tokLast-s < size*0.3) last.end = t.tokLast;
+      else segs.push({start:s,end:t.tokLast,text:ti});
+    }
+  });
+  return segs;
+}
+
+/* ---------- Classification hiérarchique descendante (Reinert) ---------- */
+function chd(C, segs, o){
+  const K = o.nClasses||5, minF = o.minFreq||3;
+  const act = new Int32Array(C.F).fill(-1), words = [];
+  for(let f=0;f<C.F;f++) if(!C.isStop[f] && C.freq[f]>=minF){ act[f]=words.length; words.push(f); }
+  const W = words.length, mark = new Int32Array(W).fill(-1);
+  const segW = segs.map((s,si)=>{
+    const a=[]; for(let i=s.start;i<s.end;i++){ const w=act[C.tokForm[i]]; if(w>=0 && mark[w]!==si){ mark[w]=si; a.push(w); } }
+    return Int32Array.from(a);
+  });
+  const pool = []; segW.forEach((a,i)=>{ if(a.length>0) pool.push(i); });
+  const minSeg = o.minSeg>0 ? o.minSeg : Math.max(3, Math.round(pool.length*0.02));
+  const root = {segs:pool, children:null};
+  let leaves = [root];
+  while(leaves.length<K){
+    let best = null;
+    for(const l of leaves) if(!l.final && l.segs.length>=2*minSeg && (!best || l.segs.length>best.segs.length)) best = l;
+    if(!best) break;
+    const r = splitNode(best.segs, segW, W, minSeg);
+    if(!r){ best.final = true; continue; }
+    best.chi2 = r.chi2;
+    best.children = [{segs:r.A, children:null},{segs:r.B, children:null}];
+    leaves = leaves.flatMap(l=> l===best ? best.children : [l]);
+  }
+  const classOf = new Int32Array(segs.length).fill(-1), leafList = []; let k = 0;
+  (function dfs(n,d){ n.depth=d; if(n.children){ dfs(n.children[0],d+1); dfs(n.children[1],d+1); } else { n.cls=k++; leafList.push(n); for(const s of n.segs) classOf[s]=n.cls; } })(root,0);
+  return {root, classOf, K:k, leaves:leafList, nClassified:pool.length, nSegs:segs.length, nWords:W, minSeg};
+}
+
+function splitNode(sub, segW, W, minSeg){
+  const I = sub.length, nj = new Float64Array(W), mi = new Float64Array(I); let n = 0;
+  for(let a=0;a<I;a++){ const ws=segW[sub[a]]; mi[a]=ws.length; n+=ws.length; for(const w of ws) nj[w]++; }
+  let nCols = 0; for(let j=0;j<W;j++) if(nj[j]>0) nCols++;
+  if(nCols<2) return null;
+  const sc = new Float64Array(W), sr = new Float64Array(I);
+  for(let j=0;j<W;j++) sc[j] = Math.sqrt(nj[j]/n);
+  for(let a=0;a<I;a++) sr[a] = Math.sqrt(mi[a]/n);
+  let seed = 987654321; const rnd = ()=>{ seed=(seed*1103515245+12345)%2147483648; return seed/2147483648; };
+  let v = new Float64Array(W), v2 = new Float64Array(W); const u = new Float64Array(I);
+  let nrm = 0; for(let j=0;j<W;j++) if(nj[j]>0){ v[j]=rnd()-0.5; nrm+=v[j]*v[j]; }
+  nrm = Math.sqrt(nrm); for(let j=0;j<W;j++) v[j]/=nrm;
+  for(let it=0; it<400; it++){
+    let Kc = 0; for(let j=0;j<W;j++) Kc += sc[j]*v[j];
+    for(let a=0;a<I;a++){ const ws=segW[sub[a]]; let s=0; for(const w of ws) s+=v[w]/sc[w]; u[a]=s/(n*sr[a])-sr[a]*Kc; }
+    let L = 0; for(let a=0;a<I;a++) L += sr[a]*u[a];
+    v2.fill(0);
+    for(let a=0;a<I;a++){ const cf=u[a]/(n*sr[a]); for(const w of segW[sub[a]]) v2[w]+=cf; }
+    nrm = 0;
+    for(let j=0;j<W;j++){ v2[j] = nj[j]>0 ? v2[j]/sc[j]-sc[j]*L : 0; nrm += v2[j]*v2[j]; }
+    nrm = Math.sqrt(nrm); if(!(nrm>0)) return null;
+    let diff = 0; for(let j=0;j<W;j++){ v2[j]/=nrm; diff += Math.abs(v2[j]-v[j]); }
+    const tmp = v; v = v2; v2 = tmp;
+    if(diff<1e-10 && it>10) break;
+  }
+  const Fc = new Float64Array(I); for(let a=0;a<I;a++) Fc[a] = u[a]/sr[a];
+  const order = Array.from({length:I},(_,a)=>a).sort((p,q)=>Fc[p]-Fc[q]);
+  const cA = new Float64Array(W), cB = Float64Array.from(nj);
+  let nA = 0, nB = n, AA = 0, AB = 0;
+  for(let j=0;j<W;j++) if(nj[j]>0) AB += nj[j];
+  const chi = ()=> (nA>0 && nB>0) ? n*(AA/nA + AB/nB - 1) : 0;
+  const toA = a=>{ for(const w of segW[sub[a]]){ AA+=(2*cA[w]+1)/nj[w]; cA[w]++; AB-=(2*cB[w]-1)/nj[w]; cB[w]--; } nA+=mi[a]; nB-=mi[a]; };
+  const toB = a=>{ for(const w of segW[sub[a]]){ AB+=(2*cB[w]+1)/nj[w]; cB[w]++; AA-=(2*cA[w]-1)/nj[w]; cA[w]--; } nB+=mi[a]; nA-=mi[a]; };
+  let best = -1, bestPos = -1;
+  for(let p=0;p<I-1;p++){
+    toA(order[p]);
+    const cnt = p+1;
+    if(cnt>=minSeg && I-cnt>=minSeg){ const c = chi(); if(c>best){ best=c; bestPos=p; } }
+  }
+  if(bestPos<0) return null;
+  for(let p=bestPos+1;p<I-1;p++) toB(order[p]);
+  const inA = new Uint8Array(I); for(let p=0;p<=bestPos;p++) inA[order[p]] = 1;
+  let cntA = bestPos+1, cntB = I-cntA, cur = chi();
+  for(let pass=0; pass<30; pass++){
+    let moved = 0;
+    for(let a=0;a<I;a++){
+      const ws = segW[sub[a]], m = mi[a];
+      if(inA[a]){
+        if(cntA<=minSeg) continue;
+        let dA=0, dB=0; for(const w of ws){ dA -= (2*cA[w]-1)/nj[w]; dB += (2*cB[w]+1)/nj[w]; }
+        const c = n*((AA+dA)/(nA-m) + (AB+dB)/(nB+m) - 1);
+        if(c>cur+1e-9){ toB(a); inA[a]=0; cntA--; cntB++; cur=c; moved++; }
+      } else {
+        if(cntB<=minSeg) continue;
+        let dA=0, dB=0; for(const w of ws){ dB -= (2*cB[w]-1)/nj[w]; dA += (2*cA[w]+1)/nj[w]; }
+        const c = n*((AA+dA)/(nA+m) + (AB+dB)/(nB-m) - 1);
+        if(c>cur+1e-9){ toA(a); inA[a]=1; cntA++; cntB--; cur=c; moved++; }
+      }
+    }
+    if(!moved) break;
+  }
+  const A = [], B = [];
+  for(let a=0;a<I;a++) (inA[a]?A:B).push(sub[a]);
+  return A.length>=B.length ? {A,B,chi2:cur} : {A:B,B:A,chi2:cur};
+}
+
+function erfc(x){
+  const z = Math.abs(x), t = 1/(1+0.5*z);
+  const r = t*Math.exp(-z*z-1.26551223+t*(1.00002368+t*(0.37409196+t*(0.09678418+t*(-0.18628806+t*(0.27886807+t*(-1.13520398+t*(1.48851587+t*(-0.82215223+t*0.17087277)))))))));
+  return x>=0 ? r : 2-r;
+}
+function chi2p(x){ return x<=0 ? 1 : erfc(Math.sqrt(x/2)); }
+function chi2x2(a, rowTot, colTot, N){
+  const b = rowTot-a, c = colTot-a, d = N-rowTot-c;
+  const den = rowTot*(N-rowTot)*colTot*(N-colTot);
+  if(den<=0) return 0;
+  const x = N*(a*d-b*c)*(a*d-b*c)/den;
+  return (a*N >= rowTot*colTot) ? x : -x;
+}
+
+function chdProfiles(C, segs, res, o){
+  const minF = o.minFreq||3, K = res.K, classOf = res.classOf;
+  const nk = new Float64Array(K); let Ns = 0;
+  for(let s=0;s<segs.length;s++) if(classOf[s]>=0){ nk[classOf[s]]++; Ns++; }
+  const elig = new Int32Array(C.F).fill(-1), forms = [];
+  for(let f=0;f<C.F;f++) if(C.freq[f]>=minF){ elig[f]=forms.length; forms.push(f); }
+  const E = forms.length, cnt = new Float64Array(E*K), tot = new Float64Array(E), mark = new Int32Array(E).fill(-1);
+  const segForms = segs.map((s,si)=>{
+    const k = classOf[si], list = [];
+    if(k<0) return list;
+    for(let i=s.start;i<s.end;i++){ const e=elig[C.tokForm[i]]; if(e>=0 && mark[e]!==si){ mark[e]=si; list.push(e); cnt[e*K+k]++; tot[e]++; } }
+    return list;
+  });
+  const chi = new Float64Array(E*K);
+  for(let e=0;e<E;e++) for(let k=0;k<K;k++) chi[e*K+k] = chi2x2(cnt[e*K+k], nk[k], tot[e], Ns);
+  const classes = [];
+  for(let k=0;k<K;k++){
+    const rows = [];
+    for(let e=0;e<E;e++){
+      const x = chi[e*K+k];
+      if(x>0 && cnt[e*K+k]>0) rows.push({f:forms[e], e, form:C.forms[forms[e]], a:cnt[e*K+k], tot:tot[e], pct:100*cnt[e*K+k]/tot[e], chi2:x, p:chi2p(x), stop:!!C.isStop[forms[e]]});
+    }
+    rows.sort((p,q)=>q.chi2-p.chi2);
+    const vars = [];
+    for(const name in C.vars){
+      for(const mod of C.vars[name]){
+        let a=0, m=0;
+        segs.forEach((s,si)=>{ if(classOf[si]<0) return; if(C.texts[s.text].vars[name]===mod){ m++; if(classOf[si]===k) a++; } });
+        const x = chi2x2(a, nk[k], m, Ns);
+        vars.push({v:'*'+name+'_'+mod, a, tot:m, pct: m? 100*a/m : 0, chi2:x, p:chi2p(Math.abs(x))});
+      }
+    }
+    vars.sort((p,q)=>q.chi2-p.chi2);
+    const sc = [];
+    segs.forEach((s,si)=>{ if(classOf[si]!==k) return; let z=0; for(const e of segForms[si]){ const x=chi[e*K+k]; if(x>0 && !C.isStop[forms[e]]) z+=x; } sc.push({si, score:z}); });
+    sc.sort((p,q)=>q.score-p.score);
+    classes.push({rows, vars, segs: sc.slice(0,12)});
+  }
+  return {forms, chi, cnt, tot, nk, Ns, K, E, classes, elig};
+}
+
+/* ---------- Similitudes ---------- */
+function similitudes(C, units, o){
+  const n0 = o.nWords||60;
+  const cand = []; for(let f=0;f<C.F;f++) if(!C.isStop[f]) cand.push(f);
+  cand.sort((a,b)=>C.freq[b]-C.freq[a]);
+  const ids = cand.slice(0,n0), n = ids.length, idx = new Int32Array(C.F).fill(-1);
+  ids.forEach((f,i)=>idx[f]=i);
+  const df = new Float64Array(n), co = new Float64Array(n*n), mark = new Int32Array(n).fill(-1);
+  units.forEach((u,ui)=>{
+    const list = [];
+    for(let i=u.start;i<u.end;i++){ const w=idx[C.tokForm[i]]; if(w>=0 && mark[w]!==ui){ mark[w]=ui; list.push(w); } }
+    for(const a of list) df[a]++;
+    for(let x=0;x<list.length;x++) for(let y=x+1;y<list.length;y++){ co[list[x]*n+list[y]]++; co[list[y]*n+list[x]]++; }
+  });
+  const edges = [];
+  for(let a=0;a<n;a++) for(let b=a+1;b<n;b++){
+    const c = co[a*n+b]; if(c<=0) continue;
+    const w = o.index==='jaccard' ? c/(df[a]+df[b]-c) : c;
+    edges.push({a,b,w,co:c});
+  }
+  edges.sort((p,q)=>q.w-p.w || q.co-p.co);
+  const parent = Array.from({length:n},(_,i)=>i);
+  const find = x=>{ while(parent[x]!==x){ parent[x]=parent[parent[x]]; x=parent[x]; } return x; };
+  const tree = [];
+  for(const e of edges){ const ra=find(e.a), rb=find(e.b); if(ra!==rb){ parent[ra]=rb; tree.push(e); } }
+  const nodes = ids.map((f,i)=>({f, form:C.forms[f], freq:C.freq[f], df:df[i]}));
+  return {nodes, edges:tree, comm: communities(n, tree)};
+}
+
+// Modularité gloutonne (Clauset-Newman-Moore, version simple)
+function communities(n, edges){
+  if(!edges.length) return new Int32Array(n);
+  let m2 = 0; for(const e of edges) m2 += 2*e.w;
+  const E = new Map(); const key=(a,b)=>a<b? a*100000+b : b*100000+a;
+  const deg = new Float64Array(n);
+  for(const e of edges){ E.set(key(e.a,e.b),(E.get(key(e.a,e.b))||0)+e.w/m2); deg[e.a]+=e.w/m2; deg[e.b]+=e.w/m2; }
+  const comm = Array.from({length:n},(_,i)=>i), alive = new Set(comm);
+  const members = Array.from({length:n},(_,i)=>[i]);
+  for(;;){
+    let best = 0, bp = null;
+    for(const [k,eab] of E){ const a=Math.floor(k/100000), b=k%100000; const dq = 2*(eab - deg[a]*deg[b]); if(dq>best+1e-12){ best=dq; bp=[a,b]; } }
+    if(!bp) break;
+    const [a,b] = bp;
+    const nE = new Map();
+    for(const [k,v] of E){
+      let x=Math.floor(k/100000), y=k%100000;
+      if(x===b) x=a; if(y===b) y=a;
+      if(x===y) continue;
+      nE.set(key(x,y),(nE.get(key(x,y))||0)+v);
+    }
+    E.clear(); for(const [k,v] of nE) E.set(k,v);
+    deg[a] += deg[b]; deg[b] = 0;
+    members[a] = members[a].concat(members[b]); members[b] = [];
+    alive.delete(b);
+  }
+  const groups = [...alive].map(c=>members[c]).sort((p,q)=>q.length-p.length);
+  const lab = new Int32Array(n);
+  groups.forEach((g,i)=>g.forEach(x=>lab[x]=i));
+  return lab;
+}
+
+function forceLayout(n, edges, W, H){
+  const x = new Float64Array(n), y = new Float64Array(n);
+  let seed = 42; const rnd=()=>{ seed=(seed*1103515245+12345)%2147483648; return seed/2147483648; };
+  for(let i=0;i<n;i++){ const a=2*Math.PI*i/n; x[i]=W/2+W*0.35*Math.cos(a)+rnd()*10; y[i]=H/2+H*0.35*Math.sin(a)+rnd()*10; }
+  const k = Math.sqrt(W*H/Math.max(n,1))*0.95;
+  let maxw = 0; for(const e of edges) maxw = Math.max(maxw,e.w);
+  let t = W/6;
+  const dx = new Float64Array(n), dy = new Float64Array(n);
+  for(let it=0; it<900; it++){
+    dx.fill(0); dy.fill(0);
+    for(let i=0;i<n;i++) for(let j=i+1;j<n;j++){
+      let ddx=x[i]-x[j], ddy=y[i]-y[j]; let d2=ddx*ddx+ddy*ddy; if(d2<0.01){ ddx=rnd()-0.5; ddy=rnd()-0.5; d2=ddx*ddx+ddy*ddy; }
+      const d=Math.sqrt(d2), f=k*k/d;
+      dx[i]+=ddx/d*f; dy[i]+=ddy/d*f; dx[j]-=ddx/d*f; dy[j]-=ddy/d*f;
+    }
+    for(const e of edges){
+      const ddx=x[e.a]-x[e.b], ddy=y[e.a]-y[e.b], d=Math.sqrt(ddx*ddx+ddy*ddy)||0.01;
+      const f = d*d/k*(0.35+0.5*e.w/(maxw||1));
+      dx[e.a]-=ddx/d*f; dy[e.a]-=ddy/d*f; dx[e.b]+=ddx/d*f; dy[e.b]+=ddy/d*f;
+    }
+    for(let i=0;i<n;i++){
+      dx[i] += (W/2-x[i])*0.02*k/ (W/10); dy[i] += (H/2-y[i])*0.02*k/(H/10);
+      const disp = Math.sqrt(dx[i]*dx[i]+dy[i]*dy[i]);
+      if(disp>0){ const s=Math.min(disp,t)/disp; x[i]+=dx[i]*s; y[i]+=dy[i]*s; }
+    }
+    t = Math.max(t*0.99, 0.5);
+  }
+  let x0=Infinity,x1=-Infinity,y0=Infinity,y1=-Infinity;
+  for(let i=0;i<n;i++){ x0=Math.min(x0,x[i]); x1=Math.max(x1,x[i]); y0=Math.min(y0,y[i]); y1=Math.max(y1,y[i]); }
+  const mx=80, my=40, sx=(W-2*mx)/((x1-x0)||1), sy=(H-2*my)/((y1-y0)||1);
+  for(let i=0;i<n;i++){ x[i]=mx+(x[i]-x0)*sx; y[i]=my+(y[i]-y0)*sy; }
+  return {x,y};
+}
+
+/* ---------- Segments répétés ---------- */
+function repeated(C, o){
+  const minL = Math.max(2,o.minLen||2), maxL = Math.max(minL,o.maxLen||8), minF = Math.max(2,o.minFreq||2);
+  const res = [];
+  for(let L=minL; L<=maxL; L++){
+    const map = new Map();
+    for(let i=0;i+L<=C.N;i++){
+      let ok = true;
+      for(let k=1;k<L;k++) if(C.tokBrk[i+k]>0){ ok=false; break; }
+      if(!ok) continue;
+      let key = ''+C.tokForm[i]; for(let k=1;k<L;k++) key += ','+C.tokForm[i+k];
+      map.set(key,(map.get(key)||0)+1);
+    }
+    let any = false;
+    for(const [k,v] of map){
+      if(v<minF) continue;
+      const ids = k.split(',').map(Number);
+      if(o.full && ids.every(f=>C.isStop[f])) continue;
+      any = true;
+      res.push({ids, L, freq:v, seg: joinForms(C,ids)});
+    }
+    if(!any) break;
+  }
+  if(o.maximal){
+    const byKey = new Map(res.map(r=>[r.ids.join(','), r]));
+    for(const r of res){
+      if(r.L<=minL) continue;
+      const a = r.ids.slice(0,-1).join(','), b = r.ids.slice(1).join(',');
+      for(const k of [a,b]){ const s=byKey.get(k); if(s && s.freq===r.freq) s.hidden = true; }
+    }
+  }
+  return res.filter(r=>!r.hidden).sort((p,q)=>q.freq-p.freq || q.L-p.L);
+}
+function joinForms(C, ids){
+  let s = '';
+  ids.forEach((f,i)=>{ const w=C.forms[f]; s += (i>0 && !s.endsWith("'") ? ' ' : '') + w; });
+  return s;
+}
+
+/* ---------- Recherche, concordances, cooccurrents ---------- */
+function compileQuery(C, q){
+  q = normalize(q).trim().toLocaleLowerCase('fr');
+  if(!q) return null;
+  const parts = [];
+  // une expression régulière /.../ reste entière, le reste est découpé en mots
+  const re = /\/[^\/]+\/|\S+/g; let m;
+  while((m = re.exec(q))){
+    let p = m[0];
+    if(p.length>2 && p[0]==='/' && p.endsWith('/')){ parts.push({re:p.slice(1,-1)}); continue; }
+    p = p.replace(/aujourd'hui/g,'\u0001').replace(/'(?=[^|*])/g,"' ").replace(/\u0001/g,"aujourd'hui");
+    for(const w of p.split(/\s+/).filter(Boolean)) parts.push({w});
+  }
+  return parts.map(p=>{
+    let rx;
+    try {
+      rx = p.re!==undefined ? new RegExp('^(?:'+p.re+')$','iu')
+        : new RegExp('^(?:'+p.w.split('|').map(x=>x.replace(/[.+?^${}()[\]\\\/]/g,'\\$&').replace(/\*/g,'.*')).join('|')+')$','iu');
+    } catch(e){ throw new Error('Expression régulière invalide : '+e.message); }
+    const mk = new Uint8Array(C.F);
+    for(let f=0;f<C.F;f++) if(rx.test(C.forms[f])) mk[f]=1;
+    return mk;
+  });
+}
+function findHits(C, q){
+  const seq = compileQuery(C,q); if(!seq) return {hits:[], L:0};
+  const L = seq.length, hits = [];
+  outer: for(let i=0;i+L<=C.N;i++){
+    if(!seq[0][C.tokForm[i]]) continue;
+    for(let k=1;k<L;k++) if(C.tokText[i+k]!==C.tokText[i] || !seq[k][C.tokForm[i+k]]) continue outer;
+    hits.push(i);
+  }
+  return {hits, L};
+}
+function kwic(C, i, L, ctx){
+  const ti = C.tokText[i], t = C.texts[ti], txt = t.text, j = i+L-1;
+  const a = Math.max(t.tokFirst, i-ctx), b = Math.min(t.tokLast-1, j+ctx);
+  return {i, text:ti,
+    left: txt.slice(C.tokStart[a], C.tokStart[i]).replace(/\s+/g,' '),
+    pivot: txt.slice(C.tokStart[i], C.tokEnd[j]).replace(/\s+/g,' '),
+    right: txt.slice(C.tokEnd[j], C.tokEnd[b]).replace(/\s+/g,' ')};
+}
+function cooccurrents(C, hits, L, win){
+  const inW = new Uint8Array(C.N), piv = new Uint8Array(C.N);
+  for(const i of hits) for(let k=0;k<L;k++) piv[i+k]=1;
+  for(const i of hits){
+    const t = C.texts[C.tokText[i]];
+    const a = Math.max(t.tokFirst, i-win), b = Math.min(t.tokLast-1, i+L-1+win);
+    for(let j=a;j<=b;j++) if(!piv[j]) inW[j]=1;
+  }
+  const cnt = new Float64Array(C.F), pf = new Float64Array(C.F); let t = 0, nP = 0;
+  for(let j=0;j<C.N;j++){ if(inW[j]){ t++; cnt[C.tokForm[j]]++; } if(piv[j]){ nP++; pf[C.tokForm[j]]++; } }
+  const T = C.N-nP, rows = [];
+  for(let f=0;f<C.F;f++){
+    if(cnt[f]<2) continue;
+    const fr = C.freq[f]-pf[f];
+    rows.push({f, form:C.forms[f], k:cnt[f], freq:C.freq[f], score: specif(cnt[f], T, fr, t, C.lf), stop:!!C.isStop[f]});
+  }
+  rows.sort((p,q)=>q.score-p.score);
+  return {rows, t};
+}
+function ventilation(C, part, hits){
+  const P = part.P, k = new Float64Array(P);
+  for(const i of hits) k[part.tokPart[i]]++;
+  const tot = hits.length;
+  return part.labels.map((lab,p)=>({label:lab, k:k[p], size:part.sizes[p], rel: part.sizes[p]? 10000*k[p]/part.sizes[p] : 0, score: specif(k[p], C.N, tot, part.sizes[p], C.lf)}));
+}
+
+return {DEFAULT_STOP, parseStop, normalize, parseCorpus, buildCorpus, stats, partition, lexTable, specif, specificities,
+  jacobiEigen, ca, segments, chd, chdProfiles, chi2p, chi2x2, similitudes, communities, forceLayout, repeated, joinForms,
+  compileQuery, findHits, kwic, cooccurrents, ventilation};
+})();
+</script>
+
+<!-- =====================================================================
+     INTERFACE
+     ===================================================================== -->
+<script id="ui">
+(() => {
+"use strict";
+const $ = s=>document.querySelector(s), $$ = s=>[...document.querySelectorAll(s)];
+const esc = s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const nf = new Intl.NumberFormat('fr-FR');
+const fmt = n=>nf.format(n);
+const fx = (n,d=2)=>Number(n).toLocaleString('fr-FR',{minimumFractionDigits:d,maximumFractionDigits:d});
+const fp = p=> p<0.0001 ? '< 0,0001' : fx(p,4);
+const PAL = ['#d62728','#e07b00','#2ca02c','#1f77b4','#9467bd','#7f7f7f','#17a2b8','#8c564b','#e377c2','#9a9a1a','#4b6cb7','#c2185b','#00897b','#6d4c41','#5e35b1','#43a047','#f4511e','#3949ab','#7cb342','#8e24aa'];
+const col = k=>PAL[k%PAL.length];
+const FONT = 'Segoe UI, Roboto, Helvetica, Arial, sans-serif';
+const App = {C:null, segCache:{}, chd:null, spec:null, afc:null};
+
+/* ---------- Utilitaires ---------- */
+function busy(fn){
+  $('#busy').style.display = 'flex';
+  setTimeout(()=>{
+    try { fn(); } catch(e){ console.error(e); alert('Erreur : '+e.message); }
+    finally { $('#busy').style.display = 'none'; }
+  }, 30);
+}
+function download(data, name, type){
+  const blob = data instanceof Blob ? data : new Blob([data],{type});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+function toCSV(cols, rows){
+  const q = v=>{ v = v==null ? '' : String(v); return /[;"\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v; };
+  return '﻿' + [cols.map(c=>q(c.label)).join(';'),
+    ...rows.map(r=>cols.map(c=>{ let v=r[c.key]; if(typeof v==='number') v=String(Math.round(v*1e6)/1e6).replace('.',','); return q(v); }).join(';'))].join('\r\n');
+}
+function makeTable(o){
+  const cols = o.cols, rows = o.rows, limit = o.limit||1000;
+  const box = document.createElement('div');
+  box.innerHTML = `<div class="tools">${o.title?`<b>${esc(o.title)}</b>`:''}${o.filter!==false?'<input type="text" class="flt" placeholder="Filtrer…">':''}<span class="muted cnt"></span><span style="flex:1"></span><button class="b2 csv">Exporter CSV</button></div><div class="tw" style="max-height:${o.height||520}px"><table class="t ${o.cls||''}"><thead></thead><tbody></tbody></table></div>`;
+  let sk = o.sortKey||null, sd = o.sortDir||-1, q = '', shown = [];
+  const thead = box.querySelector('thead'), tbody = box.querySelector('tbody');
+  function render(){
+    let r = rows;
+    if(q){ const k = o.filterKey||cols[0].key; r = r.filter(x=>String(x[k]).toLowerCase().includes(q)); }
+    if(sk){ r = [...r].sort((a,b)=>{ const x=a[sk], y=b[sk]; return (typeof x==='number' && typeof y==='number' ? x-y : String(x).localeCompare(String(y),'fr'))*sd; }); }
+    shown = r.slice(0,limit);
+    thead.innerHTML = '<tr>'+cols.map(c=>`<th data-k="${esc(c.key)}" class="${c.num?'n':''}" title="${esc(c.tip||'')}">${esc(c.label)}${sk===c.key?(sd>0?' ▲':' ▼'):''}</th>`).join('')+'</tr>';
+    tbody.innerHTML = shown.map((x,i)=>`<tr data-i="${i}" class="${o.onRow?'click ':''}${o.rowClass?o.rowClass(x):''}">`+
+      cols.map(c=>`<td class="${c.num?'n ':''}${c.cls?c.cls(x):''}"${c.style?` style="${c.style(x)}"`:''}>${c.fmt?c.fmt(x[c.key],x):esc(x[c.key]??'')}</td>`).join('')+'</tr>').join('');
+    box.querySelector('.cnt').textContent = r.length>limit ? `${fmt(r.length)} lignes (${fmt(limit)} affichées)` : `${fmt(r.length)} ligne${r.length>1?'s':''}`;
+  }
+  thead.onclick = e=>{ const th=e.target.closest('th'); if(!th) return; const k=th.dataset.k; if(sk===k) sd=-sd; else { sk=k; sd = cols.find(c=>c.key===k).num ? -1 : 1; } render(); };
+  if(o.onRow) tbody.onclick = e=>{ const tr=e.target.closest('tr'); if(tr) o.onRow(shown[+tr.dataset.i]); };
+  const fl = box.querySelector('.flt'); if(fl) fl.oninput = ()=>{ q = fl.value.toLowerCase(); render(); };
+  box.querySelector('.csv').onclick = ()=>download(toCSV(o.csvCols||cols, rows), (o.csv||'tableau')+'.csv', 'text/csv;charset=utf-8');
+  render();
+  return box;
+}
+function card(html){ const d=document.createElement('div'); d.className='card'; if(html instanceof Node) d.appendChild(html); else d.innerHTML=html; return d; }
+
+/* ---------- Graphiques SVG ---------- */
+function svgOpen(w,h){ return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" style="max-width:${w}px" class="chart" font-family="${FONT}" font-size="12"><rect x="-10000" y="-10000" width="30000" height="30000" fill="#fff"/>`; }
+function ticks(a,b,n=6){
+  if(a===b){ a-=1; b+=1; }
+  const step0=(b-a)/n, mag=10**Math.floor(Math.log10(step0)), r=step0/mag;
+  const step=(r<1.5?1:r<3?2:r<7?5:10)*mag, out=[];
+  for(let v=Math.ceil(a/step)*step; v<=b+step*1e-9; v+=step) out.push(+v.toPrecision(12));
+  return out;
+}
+function niceRange(a,b){ const t=ticks(a,b), st=t.length>1?t[1]-t[0]:1; return [Math.floor(a/st-1e-9)*st, Math.ceil(b/st-1e-9)*st]; }
+function tickLabel(v){ return Math.abs(v)>=1000 ? fmt(Math.round(v)) : String(+v.toPrecision(6)).replace('.',','); }
+
+function lineChart(series, o){
+  const W=o.w||640, H=o.h||380, m={l:66,r:20,t:24,b:48};
+  const tx = o.logx ? Math.log10 : v=>v, ty = o.logy ? Math.log10 : v=>v;
+  let x0=Infinity,x1=-Infinity,y0=Infinity,y1=-Infinity;
+  for(const s of series) for(const [x,y] of s.pts){ x0=Math.min(x0,tx(x)); x1=Math.max(x1,tx(x)); y0=Math.min(y0,ty(y)); y1=Math.max(y1,ty(y)); }
+  if(!o.logy) y0 = Math.min(0,y0);
+  if(!o.logx) x0 = Math.min(0,x0);
+  const sx=v=>m.l+(tx(v)-x0)/((x1-x0)||1)*(W-m.l-m.r), sy=v=>H-m.b-(ty(v)-y0)/((y1-y0)||1)*(H-m.t-m.b);
+  let s = svgOpen(W,H);
+  const xt = o.logx ? range(Math.ceil(x0),Math.floor(x1)).map(k=>10**k) : ticks(x0,x1);
+  const yt = o.logy ? range(Math.ceil(y0),Math.floor(y1)).map(k=>10**k) : ticks(y0,y1);
+  for(const v of yt){ const y=sy(v); s+=`<line x1="${m.l}" x2="${W-m.r}" y1="${y}" y2="${y}" stroke="#eceae4"/><text x="${m.l-8}" y="${y+4}" text-anchor="end" fill="#666">${tickLabel(v)}</text>`; }
+  for(const v of xt){ const x=sx(v); s+=`<line x1="${x}" x2="${x}" y1="${m.t}" y2="${H-m.b}" stroke="#f2f0eb"/><text x="${x}" y="${H-m.b+16}" text-anchor="middle" fill="#666">${tickLabel(v)}</text>`; }
+  s += `<line x1="${m.l}" x2="${W-m.r}" y1="${H-m.b}" y2="${H-m.b}" stroke="#999"/><line x1="${m.l}" x2="${m.l}" y1="${m.t}" y2="${H-m.b}" stroke="#999"/>`;
+  for(const se of series){
+    s += `<polyline fill="none" stroke="${se.color||'#2f5d8a'}" stroke-width="2" points="${se.pts.map(([x,y])=>sx(x).toFixed(1)+','+sy(y).toFixed(1)).join(' ')}"/>`;
+  }
+  s += `<text x="${(m.l+W-m.r)/2}" y="${H-8}" text-anchor="middle" fill="#333">${esc(o.xlab||'')}</text>`;
+  s += `<text transform="translate(16 ${(m.t+H-m.b)/2}) rotate(-90)" text-anchor="middle" fill="#333">${esc(o.ylab||'')}</text>`;
+  if(o.title) s += `<text x="${m.l}" y="15" font-weight="600" fill="#222">${esc(o.title)}</text>`;
+  return s+'</svg>';
+}
+function range(a,b){ const r=[]; for(let i=a;i<=b;i++) r.push(i); return r; }
+
+function barChart(items, o){
+  const n = items.length, rot = n>8 || items.some(i=>String(i.label).length>10);
+  const maxLab = Math.min(28, Math.max(...items.map(i=>String(i.label).length)));
+  const W = o.w || Math.max(520, n*(rot?26:46)+100), H = o.h||380;
+  const m = {l:66, r:16, t:26, b: rot ? 30+maxLab*6 : 46};
+  const vals = items.map(i=>i.value);
+  let y0 = Math.min(0,...vals), y1 = Math.max(0,...vals); if(y0===y1) y1 = 1;
+  if(o.lines) for(const l of o.lines){ y0=Math.min(y0,l.v); y1=Math.max(y1,l.v); }
+  [y0,y1] = niceRange(y0,y1);
+  const sy = v=>H-m.b-(v-y0)/(y1-y0)*(H-m.t-m.b), bw = (W-m.l-m.r)/n;
+  let s = svgOpen(W,H);
+  for(const v of ticks(y0,y1)){ const y=sy(v); s+=`<line x1="${m.l}" x2="${W-m.r}" y1="${y}" y2="${y}" stroke="#eceae4"/><text x="${m.l-8}" y="${y+4}" text-anchor="end" fill="#666">${tickLabel(v)}</text>`; }
+  if(o.lines) for(const l of o.lines){ const y=sy(l.v); s+=`<line x1="${m.l}" x2="${W-m.r}" y1="${y}" y2="${y}" stroke="${l.color||'#c33'}" stroke-dasharray="4 3"/>`; }
+  items.forEach((it,i)=>{
+    const x = m.l+i*bw+bw*0.15, w = bw*0.7, ya = sy(Math.max(0,it.value)), yb = sy(Math.min(0,it.value));
+    s += `<rect x="${x.toFixed(1)}" y="${ya.toFixed(1)}" width="${w.toFixed(1)}" height="${Math.max(0.5,yb-ya).toFixed(1)}" fill="${it.color||'#2f5d8a'}"><title>${esc(it.label)} : ${esc(tickLabel(it.value))}</title></rect>`;
+    const lab = String(it.label).length>28 ? String(it.label).slice(0,27)+'…' : it.label, cx = x+w/2;
+    s += rot ? `<text transform="translate(${cx+4} ${H-m.b+10}) rotate(-50)" text-anchor="end" fill="#444" font-size="11">${esc(lab)}</text>`
+             : `<text x="${cx}" y="${H-m.b+16}" text-anchor="middle" fill="#444">${esc(lab)}</text>`;
+  });
+  s += `<line x1="${m.l}" x2="${W-m.r}" y1="${sy(0)}" y2="${sy(0)}" stroke="#888"/>`;
+  s += `<text transform="translate(16 ${(m.t+H-m.b)/2}) rotate(-90)" text-anchor="middle" fill="#333">${esc(o.ylab||'')}</text>`;
+  if(o.title) s += `<text x="${m.l}" y="16" font-weight="600" fill="#222">${esc(o.title)}</text>`;
+  return s+'</svg>';
+}
+
+function groupedBars(groups, seriesNames, o){
+  // groups: [{label, values:[...]}]
+  const n = groups.length, S = seriesNames.length;
+  const rot = n>8 || groups.some(g=>String(g.label).length>10);
+  const maxLab = Math.min(28, Math.max(...groups.map(g=>String(g.label).length)));
+  const W = o.w || Math.max(560, n*Math.max(30,S*16)+110), H = o.h||400;
+  const m = {l:66, r:16, t:40, b: rot ? 30+maxLab*6 : 46};
+  const vals = groups.flatMap(g=>g.values);
+  let y0 = Math.min(0,...vals), y1 = Math.max(0,...vals); if(y0===y1) y1=1;
+  if(o.lines) for(const l of o.lines){ y0=Math.min(y0,l.v); y1=Math.max(y1,l.v); }
+  [y0,y1] = niceRange(y0,y1);
+  const sy = v=>H-m.b-(v-y0)/(y1-y0)*(H-m.t-m.b), gw = (W-m.l-m.r)/n, bw = gw*0.8/S;
+  let s = svgOpen(W,H);
+  for(const v of ticks(y0,y1)){ const y=sy(v); s+=`<line x1="${m.l}" x2="${W-m.r}" y1="${y}" y2="${y}" stroke="#eceae4"/><text x="${m.l-8}" y="${y+4}" text-anchor="end" fill="#666">${tickLabel(v)}</text>`; }
+  if(o.lines) for(const l of o.lines){ const y=sy(l.v); s+=`<line x1="${m.l}" x2="${W-m.r}" y1="${y}" y2="${y}" stroke="${l.color||'#c33'}" stroke-dasharray="4 3"/>`; }
+  groups.forEach((g,i)=>{
+    g.values.forEach((v,k)=>{
+      const x = m.l+i*gw+gw*0.1+k*bw, ya=sy(Math.max(0,v)), yb=sy(Math.min(0,v));
+      s += `<rect x="${x.toFixed(1)}" y="${ya.toFixed(1)}" width="${(bw*0.92).toFixed(1)}" height="${Math.max(0.5,yb-ya).toFixed(1)}" fill="${col(k+3)}"><title>${esc(seriesNames[k])} · ${esc(g.label)} : ${esc(tickLabel(v))}</title></rect>`;
+    });
+    const lab = String(g.label).length>28 ? String(g.label).slice(0,27)+'…' : g.label, cx = m.l+i*gw+gw/2;
+    s += rot ? `<text transform="translate(${cx+4} ${H-m.b+10}) rotate(-50)" text-anchor="end" fill="#444" font-size="11">${esc(lab)}</text>`
+             : `<text x="${cx}" y="${H-m.b+16}" text-anchor="middle" fill="#444">${esc(lab)}</text>`;
+  });
+  s += `<line x1="${m.l}" x2="${W-m.r}" y1="${sy(0)}" y2="${sy(0)}" stroke="#888"/>`;
+  let lx = m.l;
+  seriesNames.forEach((nm,k)=>{ s += `<rect x="${lx}" y="10" width="11" height="11" fill="${col(k+3)}"/><text x="${lx+15}" y="20" fill="#333">${esc(nm)}</text>`; lx += 30+nm.length*7; });
+  s += `<text transform="translate(16 ${(m.t+H-m.b)/2}) rotate(-90)" text-anchor="middle" fill="#333">${esc(o.ylab||'')}</text>`;
+  return s+'</svg>';
+}
+
+function scatterPlot(pts, o){
+  // pts: [{x,y,label,color,size,bold,shape}]
+  const W=o.w||1000, H=o.h||720, m=50;
+  let x0=Infinity,x1=-Infinity,y0=Infinity,y1=-Infinity;
+  for(const p of pts){ x0=Math.min(x0,p.x); x1=Math.max(x1,p.x); y0=Math.min(y0,p.y); y1=Math.max(y1,p.y); }
+  const px=(x1-x0)*0.08||1, py=(y1-y0)*0.08||1; x0-=px; x1+=px; y0-=py; y1+=py;
+  const sx=v=>m+(v-x0)/(x1-x0)*(W-2*m), sy=v=>H-m-(v-y0)/(y1-y0)*(H-2*m);
+  let s = svgOpen(W,H);
+  s += `<line x1="${m}" x2="${W-m}" y1="${sy(0)}" y2="${sy(0)}" stroke="#bbb" stroke-dasharray="5 4"/>`;
+  s += `<line x1="${sx(0)}" x2="${sx(0)}" y1="${m}" y2="${H-m}" stroke="#bbb" stroke-dasharray="5 4"/>`;
+  for(const p of pts){
+    const x=sx(p.x), y=sy(p.y), fs=p.size||12;
+    if(p.shape==='square') s += `<rect x="${x-4}" y="${y-4}" width="8" height="8" fill="${p.color}"/>`;
+    else s += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.6" fill="${p.color}"/>`;
+    s += `<text x="${(x+5).toFixed(1)}" y="${(y-4).toFixed(1)}" font-size="${fs.toFixed(1)}" fill="${p.color}" ${p.bold?'font-weight="700"':''}>${esc(p.label)}<title>${esc(p.label)} (${fx(p.x,3)} ; ${fx(p.y,3)})</title></text>`;
+  }
+  s += `<text x="${W-m}" y="${sy(0)-6}" text-anchor="end" fill="#555" font-size="12">${esc(o.xlab||'')}</text>`;
+  s += `<text x="${sx(0)+6}" y="${m-8}" fill="#555" font-size="12">${esc(o.ylab||'')}</text>`;
+  return s+'</svg>';
+}
+
+function panZoom(svg){
+  const vb = svg.viewBox.baseVal, orig = [vb.x,vb.y,vb.width,vb.height];
+  svg.style.cursor = 'grab';
+  svg.addEventListener('wheel', e=>{
+    e.preventDefault();
+    const r = svg.getBoundingClientRect();
+    const px = vb.x+(e.clientX-r.left)/r.width*vb.width, py = vb.y+(e.clientY-r.top)/r.height*vb.height;
+    const k = e.deltaY<0 ? 0.85 : 1/0.85;
+    vb.x = px-(px-vb.x)*k; vb.y = py-(py-vb.y)*k; vb.width *= k; vb.height *= k;
+  }, {passive:false});
+  let drag = null;
+  svg.addEventListener('pointerdown', e=>{ if(e.target.closest('[data-node]')) return; drag={x:e.clientX,y:e.clientY,vx:vb.x,vy:vb.y}; svg.setPointerCapture(e.pointerId); svg.style.cursor='grabbing'; });
+  svg.addEventListener('pointermove', e=>{ if(!drag) return; const r=svg.getBoundingClientRect(); vb.x=drag.vx-(e.clientX-drag.x)/r.width*vb.width; vb.y=drag.vy-(e.clientY-drag.y)/r.height*vb.height; });
+  const end = ()=>{ drag=null; svg.style.cursor='grab'; };
+  svg.addEventListener('pointerup', end); svg.addEventListener('pointercancel', end);
+  svg.addEventListener('dblclick', ()=>{ [vb.x,vb.y,vb.width,vb.height] = orig; });
+}
+function svgPng(svg, name){
+  const vb = svg.viewBox.baseVal, s = new XMLSerializer().serializeToString(svg), img = new Image();
+  img.onload = ()=>{
+    const c = document.createElement('canvas'); c.width = Math.round(vb.width*2); c.height = Math.round(vb.height*2);
+    const x = c.getContext('2d'); x.fillStyle='#fff'; x.fillRect(0,0,c.width,c.height); x.drawImage(img,0,0,c.width,c.height);
+    c.toBlob(b=>download(b, name+'.png'), 'image/png');
+  };
+  img.src = 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(s);
+}
+function chartBox(svgStr, name, o={}){
+  const d = document.createElement('div'); d.className='card';
+  d.innerHTML = `<div class="tools">${o.title?`<b>${esc(o.title)}</b>`:''}<span style="flex:1"></span>${o.zoom?'<span class="muted" style="font-size:12px">molette : zoom · glisser : déplacer · double-clic : recentrer</span>':''}<button class="b2 sv">SVG</button><button class="b2 pn">PNG</button></div>${o.legend||''}<div class="chartbox" style="${o.maxw?`max-width:${o.maxw}px`:''}">${svgStr}</div>`;
+  const svg = d.querySelector('svg');
+  d.querySelector('.sv').onclick = ()=>download(new XMLSerializer().serializeToString(svg), name+'.svg', 'image/svg+xml');
+  d.querySelector('.pn').onclick = ()=>svgPng(svg, name);
+  if(o.zoom) panZoom(svg);
+  return d;
+}
+
+/* ---------- Navigation ---------- */
+const onShow = {};
+function show(p){
+  $$('#nav button').forEach(b=>b.classList.toggle('on', b.dataset.p===p));
+  $$('main section').forEach(s=>s.classList.toggle('on', s.id==='p-'+p));
+  $('main').scrollTop = 0;
+  if(onShow[p]) onShow[p]();
+}
+$$('#nav button').forEach(b=>b.onclick=()=>show(b.dataset.p));
+
+/* ---------- Import ---------- */
+$('#stopList').value = LX.DEFAULT_STOP.split(' ').join(' ');
+$('#stopReset').onclick = ()=>{ $('#stopList').value = LX.DEFAULT_STOP; };
+$('#stopApply').onclick = ()=>{ if($('#raw').value.trim()) analyse(); else show('corpus'); };
+$('#clear').onclick = ()=>{ $('#raw').value=''; };
+$('#demo').onclick = ()=>{ $('#raw').value = DEMO; };
+$('#files').onchange = async e=>{
+  const files = [...e.target.files]; if(!files.length) return;
+  const enc = $('#enc').value, parts = [];
+  for(const f of files){
+    const buf = await f.arrayBuffer();
+    let txt = new TextDecoder(enc).decode(buf);
+    if(!/^\s*\*{4}/m.test(txt)){
+      const name = f.name.replace(/\.[^.]+$/,'').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^\w-]+/g,'_');
+      txt = `**** *fichier_${name}\n` + txt;
+    }
+    parts.push(txt.trim());
+  }
+  const cur = $('#raw').value.trim();
+  $('#raw').value = (cur ? cur+'\n\n' : '') + parts.join('\n\n');
+  e.target.value = '';
+};
+$('#analyse').onclick = ()=>analyse();
+
+function analyse(){
+  const raw = $('#raw').value;
+  if(!raw.trim()){ alert('Le corpus est vide : collez un texte, ouvrez un fichier ou chargez l\'exemple.'); return; }
+  busy(()=>{
+    const texts = LX.parseCorpus(raw);
+    const C = LX.buildCorpus(texts, {lower:$('#optLower').checked, plural:$('#optPlural').checked, numStop:$('#optNum').checked, stop:LX.parseStop($('#stopList').value)});
+    if(C.N===0){ alert('Aucun mot n\'a été trouvé dans ce corpus.'); return; }
+    App.C = C; App.segCache = {}; App.chd = null; App.spec = null; App.afc = null;
+    ['statsOut','dicoOut','concordOut','repeatOut','specifOut','ventilOut','afcOut','chdOut','similOut','cloudOut'].forEach(id=>$('#'+id).innerHTML='');
+    $('#sViewBar').style.display='none'; $('#aPlotBar').style.display='none';
+    $$('#nav button[data-need]').forEach(b=>b.disabled=false);
+    const st = LX.stats(C);
+    $('#sum').textContent = `${fmt(C.texts.length)} texte${C.texts.length>1?'s':''} · ${fmt(C.N)} occurrences · ${fmt(C.F)} formes · ${fmt(st.hapax)} hapax · ${Object.keys(C.vars).length} variable${Object.keys(C.vars).length>1?'s':''}`;
+    fillPartSelects();
+    renderTextsList();
+    show('stats');
+  });
+}
+function fillPartSelects(){
+  const C = App.C, vars = Object.keys(C.vars);
+  const opts = vars.map(v=>`<option value="var:${esc(v)}">Variable *${esc(v)} (${C.vars[v].length} modalités)</option>`).join('')
+    + `<option value="text">Chaque texte (${C.texts.length})</option><option value="slices">Tranches égales du corpus</option>`;
+  $$('.partSel').forEach(s=>{
+    s.innerHTML = opts;
+    s.value = vars.length ? s.options[0].value : (C.texts.length>2 ? 'text' : 'slices');
+  });
+  const src = $('#wSrc');
+  src.innerHTML = '<option value="all">Tout le corpus</option>' + vars.flatMap(v=>C.vars[v].map(m=>`<option value="${esc(v)}\u0001${esc(m)}">*${esc(v)}_${esc(m)}</option>`)).join('');
+}
+function getPart(prefix){
+  const v = $('#'+prefix+'Part').value, n = +$('#'+prefix+'Slices').value || 10;
+  const spec = v.startsWith('var:') ? {type:'var', name:v.slice(4)} : v==='text' ? {type:'text'} : {type:'slices', n};
+  return LX.partition(App.C, spec);
+}
+function partTitle(part){ return part.spec.type==='var' ? 'variable *'+part.spec.name : part.spec.type==='text' ? 'textes' : part.P+' tranches'; }
+function renderTextsList(){
+  const C = App.C, out = $('#textsList'); out.innerHTML='';
+  const rows = C.texts.map((t,i)=>({n:i+1, name:t.name, vars:Object.entries(t.vars).map(([k,v])=>'*'+k+'_'+v).join(' '), occ:t.tokLast-t.tokFirst, i}));
+  const viewer = document.createElement('div');
+  const tb = makeTable({title:'Textes du corpus', cols:[
+      {key:'n',label:'N°',num:true},{key:'name',label:'Nom'},{key:'vars',label:'Variables',fmt:v=>v.split(' ').filter(Boolean).map(x=>`<span class="pill">${esc(x)}</span>`).join('')},{key:'occ',label:'Occurrences',num:true,fmt:fmt}],
+    rows, csv:'textes', height:320, filterKey:'vars',
+    onRow:r=>{ const t=C.texts[r.i]; viewer.innerHTML=`<div class="ctxbox"><b>${esc(t.name)}</b>  <span class="muted">${esc(rows[r.i].vars)}</span>\n\n${esc(t.text)}</div>`; }});
+  const c = card(tb); c.appendChild(viewer); out.appendChild(c);
+}
+
+/* ---------- Statistiques ---------- */
+onShow.stats = ()=>{ if(App.C && !$('#statsOut').innerHTML) renderStats(); };
+function renderStats(){
+  const C = App.C, st = LX.stats(C), out = $('#statsOut');
+  const items = [
+    ['Textes', fmt(C.texts.length)], ['Occurrences', fmt(st.N)], ['Formes', fmt(st.F)],
+    ['Hapax', `${fmt(st.hapax)} <small class="muted">(${fx(100*st.hapax/st.F,1)} % des formes)</small>`],
+    ['Formes pleines', fmt(st.full)], ['Fréquence maximale', fmt(st.maxF)],
+    ['Richesse (formes / occurrences)', fx(st.F/st.N,3)], ['Fréquence moyenne', fx(st.N/st.F,2)]];
+  out.innerHTML = `<div class="stats">${items.map(([l,v])=>`<div class="stat"><b>${v}</b><span>${l}</span></div>`).join('')}</div>`;
+  const g = document.createElement('div'); g.className='grid2';
+  g.appendChild(chartBox(lineChart([{pts:st.zipf}],{logx:true,logy:true,xlab:'Rang',ylab:'Fréquence',w:620,h:380}),'zipf',{title:'Loi de Zipf'}));
+  g.appendChild(chartBox(lineChart([{pts:st.growth,color:'#2ca02c'}],{xlab:'Occurrences lues',ylab:'Formes distinctes',w:620,h:380}),'croissance_vocabulaire',{title:'Croissance du vocabulaire'}));
+  out.appendChild(g);
+  // Gammes de fréquences
+  const spectre = new Map(); for(let f=0;f<C.F;f++) spectre.set(C.freq[f],(spectre.get(C.freq[f])||0)+1);
+  const rows = [...spectre].sort((a,b)=>a[0]-b[0]).map(([fq,nb])=>({fq,nb}));
+  out.appendChild(card(makeTable({title:'Gamme des fréquences (nombre de formes ayant chaque fréquence)', cols:[{key:'fq',label:'Fréquence',num:true},{key:'nb',label:'Nombre de formes',num:true,fmt:fmt}], rows, sortKey:'fq', sortDir:1, csv:'gamme_frequences', height:300, filter:false})));
+}
+
+/* ---------- Dictionnaire ---------- */
+onShow.dico = ()=>{ if(App.C && !$('#dicoOut').innerHTML) renderDico(); };
+$('#dShow').onchange = ()=>renderDico();
+function renderDico(){
+  const C = App.C, mode = $('#dShow').value, rows = [];
+  for(let f=0;f<C.F;f++){
+    if(mode==='full' && C.isStop[f]) continue;
+    if(mode==='stop' && !C.isStop[f]) continue;
+    if(mode==='hapax' && C.freq[f]!==1) continue;
+    rows.push({forme:C.forms[f], freq:C.freq[f], pct:100*C.freq[f]/C.N, type:C.isStop[f]?'mot-outil':'forme pleine', var:C.variants[f].join(', '), stop:C.isStop[f]});
+  }
+  rows.sort((a,b)=>b.freq-a.freq);
+  const out = $('#dicoOut'); out.innerHTML='';
+  out.appendChild(card(makeTable({cols:[
+      {key:'forme',label:'Forme',cls:x=>x.stop?'stop':''},{key:'freq',label:'Fréquence',num:true,fmt:fmt},{key:'pct',label:'% des occurrences',num:true,fmt:v=>fx(v,3)},
+      {key:'type',label:'Type',cls:x=>x.stop?'stop':''},{key:'var',label:'Variantes regroupées'}],
+    rows, limit:3000, csv:'dictionnaire', height:640, onRow:r=>openConcord(exactQuery(r.forme))})));
+}
+function exactQuery(form){ return form.replace(/[|*\/]/g,''); }
+
+/* ---------- Concordancier ---------- */
+function openConcord(q){ show('concord'); $('#cQuery').value = q; runConcord(); }
+$('#cGo').onclick = ()=>runConcord();
+$('#cQuery').onkeydown = e=>{ if(e.key==='Enter') runConcord(); };
+$('#cSort').onchange = ()=>{ if($('#cQuery').value.trim()) runConcord(); };
+function runConcord(){
+  const C = App.C; if(!C) return;
+  const q = $('#cQuery').value.trim(); if(!q) return;
+  busy(()=>{
+    const {hits, L} = LX.findHits(C, q), out = $('#concordOut'); out.innerHTML='';
+    if(!hits.length){ out.innerHTML = `<div class="card empty">Aucune occurrence trouvée pour « ${esc(q)} ».</div>`; return; }
+    const ctx = +$('#cCtx').value||12, sort = $('#cSort').value;
+    let lines = hits.map(i=>{ const k=LX.kwic(C,i,L,ctx); k.lk = i>C.texts[C.tokText[i]].tokFirst ? C.forms[C.tokForm[i-1]] : ''; k.rk = i+L<C.texts[C.tokText[i]].tokLast ? C.forms[C.tokForm[i+L]] : ''; return k; });
+    if(sort==='left') lines.sort((a,b)=>a.lk.localeCompare(b.lk,'fr')||a.i-b.i);
+    if(sort==='right') lines.sort((a,b)=>a.rk.localeCompare(b.rk,'fr')||a.i-b.i);
+    const MAX = 3000, shown = lines.slice(0,MAX);
+    const box = document.createElement('div'); box.className='card';
+    box.innerHTML = `<div class="tools"><b>${fmt(hits.length)} occurrence${hits.length>1?'s':''}</b><span class="muted">dans ${fmt(new Set(hits.map(i=>C.tokText[i])).size)} texte(s)${hits.length>MAX?` · ${fmt(MAX)} lignes affichées`:''} · cliquez sur une ligne pour lire le contexte élargi</span><span style="flex:1"></span><button class="b2 csv">Exporter CSV</button></div>
+      <div class="tw" style="max-height:460px"><table class="t kwic"><tbody>${shown.map((k,j)=>`<tr class="click" data-j="${j}"><td class="muted" style="font-family:${FONT};font-size:11.5px">${esc(C.texts[k.text].name)}</td><td class="l"><span>${esc(k.left)}</span></td><td class="p">${esc(k.pivot)}</td><td class="r">${esc(k.right)}</td></tr>`).join('')}</tbody></table></div><div class="ctx"></div>`;
+    box.querySelector('tbody').onclick = e=>{
+      const tr = e.target.closest('tr'); if(!tr) return; const k = shown[+tr.dataset.j];
+      const w = LX.kwic(C, k.i, L, 80), t = C.texts[k.text];
+      box.querySelector('.ctx').innerHTML = `<div class="ctxbox"><b>${esc(t.name)}</b> <span class="muted">${esc(Object.entries(t.vars).map(([a,b])=>'*'+a+'_'+b).join(' '))}</span>\n\n…${esc(w.left)}<mark>${esc(w.pivot)}</mark>${esc(w.right)}…</div>`;
+    };
+    box.querySelector('.csv').onclick = ()=>download(toCSV([{key:'t',label:'Texte'},{key:'left',label:'Contexte gauche'},{key:'pivot',label:'Pôle'},{key:'right',label:'Contexte droit'}], lines.map(k=>({...k,t:C.texts[k.text].name}))),'concordance.csv','text/csv;charset=utf-8');
+    out.appendChild(box);
+    // cooccurrents
+    const win = +$('#cWin').value||10, co = LX.cooccurrents(C, hits, L, win);
+    out.appendChild(card(makeTable({title:`Cooccurrents de « ${q} » (fenêtre ± ${win} mots, ${fmt(co.t)} occurrences dans les fenêtres)`, cols:[
+        {key:'form',label:'Cooccurrent',cls:x=>x.stop?'stop':''},{key:'k',label:'Co-fréquence',num:true,fmt:fmt},{key:'freq',label:'Fréquence totale',num:true,fmt:fmt},
+        {key:'score',label:'Score',num:true,fmt:v=>fx(v,2),cls:x=>x.score>=2?'pos':x.score<=-2?'neg':'',tip:'Spécificité : −log10(p) du modèle hypergéométrique'}],
+      rows:co.rows, sortKey:'score', csv:'cooccurrents', height:420, onRow:r=>openConcord(exactQuery(r.form))})));
+    // ventilation par texte rapide
+    const vars = Object.keys(C.vars);
+    if(vars.length){
+      const part = LX.partition(C,{type:'var',name:vars[0]}), v = LX.ventilation(C, part, hits);
+      out.appendChild(chartBox(barChart(v.map(x=>({label:x.label,value:x.score,color:x.score>=2?'#b8322a':x.score<=-2?'#2e6da4':'#9aa5b1'})),{ylab:'Score de spécificité',lines:[{v:2},{v:-2,color:'#2e6da4'}],h:300}),'ventilation_'+vars[0],{title:`Répartition selon *${vars[0]} (score de spécificité)`,maxw:820}));
+    }
+  });
+}
+
+/* ---------- Segments répétés ---------- */
+$('#rGo').onclick = ()=>busy(()=>{
+  const C = App.C, res = LX.repeated(C,{minLen:+$('#rMin').value, maxLen:+$('#rMax').value, minFreq:+$('#rFreq').value, full:$('#rFull').checked, maximal:$('#rMax2').checked});
+  const out = $('#repeatOut'); out.innerHTML='';
+  out.appendChild(card(makeTable({cols:[{key:'seg',label:'Segment'},{key:'L',label:'Longueur',num:true},{key:'freq',label:'Fréquence',num:true,fmt:fmt}],
+    rows:res, sortKey:'freq', limit:3000, csv:'segments_repetes', height:640, onRow:r=>openConcord(r.ids.map(f=>exactQuery(C.forms[f])).join(' '))})));
+});
+
+/* ---------- Spécificités ---------- */
+$('#sGo').onclick = ()=>busy(()=>{
+  const part = getPart('s'), minF = +$('#sMin').value||1;
+  App.spec = {part, ...LX.specificities(App.C, part, minF)};
+  $('#sView').innerHTML = `<option value="__all">Tableau complet (toutes les parties)</option><option value="__sum">Synthèse : nombre de spécificités par partie</option>` + part.labels.map((l,p)=>`<option value="${p}">${esc(l)}</option>`).join('');
+  $('#sView').value = part.P<=12 ? '0' : '__all';
+  $('#sViewBar').style.display='';
+  renderSpecif();
+});
+$('#sView').onchange = ()=>renderSpecif();
+$('#sSeuil').onchange = ()=>{ if(App.spec) renderSpecif(); };
+function renderSpecif(){
+  const C = App.C, S = App.spec, part = S.part, P = S.P, seuil = +$('#sSeuil').value||0, view = $('#sView').value, out = $('#specifOut');
+  out.innerHTML = '';
+  if(view==='__all'){
+    const rows = S.ids.map((f,r)=>{ const o={forme:C.forms[f], freq:C.freq[f], stop:C.isStop[f]}; let mx=0; for(let p=0;p<P;p++){ const v=S.S[r*P+p]; o['p'+p]=v; if(Math.abs(v)>Math.abs(mx)) mx=v; } o.max=mx; return o; }).filter(o=>Math.abs(o.max)>=seuil);
+    const cell = v=>{ const a=Math.min(1,Math.abs(v)/10); return Math.abs(v)<seuil ? '' : v>0 ? `background:rgba(184,50,42,${0.12+0.55*a})` : `background:rgba(46,109,164,${0.12+0.55*a})`; };
+    const cols = [{key:'forme',label:'Forme',cls:x=>x.stop?'stop':''},{key:'freq',label:'Fréq.',num:true},
+      ...part.labels.map((l,p)=>({key:'p'+p,label:l,num:true,fmt:v=>fx(v,1),style:x=>cell(x['p'+p])}))];
+    out.appendChild(card(makeTable({title:`Scores de spécificité par partie (${partTitle(part)}) · formes dont un score dépasse ${seuil}`, cols, rows, sortKey:'freq', limit:2000, csv:'specificites', height:640, onRow:r=>openConcord(exactQuery(r.forme))})));
+    return;
+  }
+  if(view==='__sum'){
+    const items = part.labels.map((l,p)=>{ let pos=0,neg=0; for(let r=0;r<S.ids.length;r++){ const v=S.S[r*P+p]; if(v>=seuil) pos++; else if(v<=-seuil) neg++; } return {l,pos,neg,size:part.sizes[p]}; });
+    out.appendChild(chartBox(groupedBars(items.map(i=>({label:i.l,values:[i.pos,i.neg]})),['Spécificités positives','Spécificités négatives'],{ylab:'Nombre de formes'}),'synthese_specificites',{title:'Nombre de formes spécifiques par partie',maxw:1000}));
+    out.appendChild(card(makeTable({cols:[{key:'l',label:'Partie'},{key:'size',label:'Occurrences',num:true,fmt:fmt},{key:'pos',label:'Spécificités positives',num:true},{key:'neg',label:'Spécificités négatives',num:true}],rows:items,csv:'synthese_specificites',filter:false})));
+    return;
+  }
+  const p = +view, all = S.ids.map((f,r)=>({forme:C.forms[f], freq:C.freq[f], k:S.M[r*P+p], exp:C.freq[f]*part.sizes[p]/C.N, score:S.S[r*P+p], stop:C.isStop[f]}));
+  const pos = all.filter(x=>x.score>=seuil), neg = all.filter(x=>x.score<=-seuil);
+  out.innerHTML = `<p class="muted">Partie « <b>${esc(part.labels[p])}</b> » : ${fmt(part.sizes[p])} occurrences (${fx(100*part.sizes[p]/C.N,1)} % du corpus) · ${pos.length} spécificités positives et ${neg.length} négatives au seuil de ${seuil}.</p>`;
+  const g = document.createElement('div'); g.className='grid2';
+  const cols = [{key:'forme',label:'Forme',cls:x=>x.stop?'stop':''},{key:'freq',label:'Fréq. totale',num:true,fmt:fmt},{key:'k',label:'Fréq. partie',num:true,fmt:fmt},{key:'exp',label:'Attendu',num:true,fmt:v=>fx(v,1)},{key:'score',label:'Score',num:true,fmt:v=>fx(v,2)}];
+  g.appendChild(card(makeTable({title:'Sur-emplois (spécificités positives)', cols:cols.map(c=>c.key==='score'?{...c,cls:()=> 'pos'}:c), rows:pos, sortKey:'score', sortDir:-1, csv:'specif_positives_'+part.labels[p], height:560, onRow:r=>openConcord(exactQuery(r.forme))})));
+  g.appendChild(card(makeTable({title:'Sous-emplois (spécificités négatives)', cols:cols.map(c=>c.key==='score'?{...c,cls:()=> 'neg'}:c), rows:neg, sortKey:'score', sortDir:1, csv:'specif_negatives_'+part.labels[p], height:560, onRow:r=>openConcord(exactQuery(r.forme))})));
+  out.appendChild(g);
+}
+
+/* ---------- Ventilation ---------- */
+$('#vGo').onclick = ()=>busy(()=>{
+  const C = App.C, qs = $('#vQuery').value.split(',').map(s=>s.trim()).filter(Boolean), out = $('#ventilOut');
+  out.innerHTML=''; if(!qs.length) return;
+  const part = getPart('v'), meas = $('#vMeasure').value;
+  const res = qs.map(q=>({q, h:LX.findHits(C,q).hits})).map(x=>({...x, v:LX.ventilation(C,part,x.h)}));
+  const key = meas==='rel' ? 'rel' : meas==='score' ? 'score' : 'k';
+  const ylab = meas==='rel' ? 'Fréquence pour 10 000 occurrences' : meas==='score' ? 'Score de spécificité' : 'Fréquence absolue';
+  const lines = meas==='score' ? [{v:2},{v:-2,color:'#2e6da4'}] : null;
+  let svg;
+  if(res.length===1){
+    svg = barChart(res[0].v.map(x=>({label:x.label, value:x[key], color: meas==='score' ? (x.score>=2?'#b8322a':x.score<=-2?'#2e6da4':'#9aa5b1') : '#2f5d8a'})),{ylab,lines});
+  } else {
+    svg = groupedBars(part.labels.map((l,p)=>({label:l, values:res.map(r=>r.v[p][key])})), res.map(r=>r.q+' ('+r.h.length+')'), {ylab,lines});
+  }
+  out.appendChild(chartBox(svg,'ventilation',{title:`Ventilation selon ${partTitle(part)}`}));
+  const rows = part.labels.map((l,p)=>{ const o={label:l,size:part.sizes[p]}; res.forEach((r,i)=>{ o['k'+i]=r.v[p].k; o['r'+i]=r.v[p].rel; o['s'+i]=r.v[p].score; }); return o; });
+  const cols = [{key:'label',label:'Partie'},{key:'size',label:'Occurrences',num:true,fmt:fmt}];
+  res.forEach((r,i)=>cols.push({key:'k'+i,label:r.q+' : fréq.',num:true,fmt:fmt},{key:'r'+i,label:'pour 10 000',num:true,fmt:v=>fx(v,1)},{key:'s'+i,label:'score',num:true,fmt:v=>fx(v,2),cls:x=>x['s'+i]>=2?'pos':x['s'+i]<=-2?'neg':''}));
+  out.appendChild(card(makeTable({cols, rows, csv:'ventilation', filter:false, height:480})));
+});
+$('#vQuery').onkeydown = e=>{ if(e.key==='Enter') $('#vGo').click(); };
+
+/* ---------- AFC ---------- */
+$('#aGo').onclick = ()=>busy(()=>{
+  const C = App.C, part = getPart('a'), out = $('#afcOut'); out.innerHTML='';
+  if(part.P<3){ out.innerHTML = '<div class="card empty">Il faut au moins 3 parties pour une AFC. Choisissez une autre partition ou augmentez le nombre de tranches.</div>'; $('#aPlotBar').style.display='none'; return; }
+  const n = +$('#aN').value||150, minF = +$('#aMin').value||1, inclStop = $('#aStop').checked;
+  const ids = []; for(let f=0;f<C.F;f++) if(C.freq[f]>=minF && (inclStop || !C.isStop[f])) ids.push(f);
+  ids.sort((a,b)=>C.freq[b]-C.freq[a]); ids.length = Math.min(ids.length, Math.min(400,n));
+  const M = LX.lexTable(C, part, ids), res = LX.ca(M, ids.length, part.P, 8);
+  if(!res || res.nAx<2){ out.innerHTML = '<div class="card empty">Le tableau est trop petit ou trop homogène pour une AFC à deux axes.</div>'; $('#aPlotBar').style.display='none'; return; }
+  App.afc = {part, ids, res};
+  const axOpts = res.eig.map((l,k)=>`<option value="${k}">Axe ${k+1} (${fx(100*l/res.total,1)} %)</option>`).join('');
+  $('#aX').innerHTML = axOpts; $('#aY').innerHTML = axOpts; $('#aX').value='0'; $('#aY').value='1';
+  $('#aPlotBar').style.display='';
+  renderAFC();
+});
+['aX','aY','aShow','aLab'].forEach(id=>$('#'+id).onchange = ()=>{ if(App.afc) renderAFC(); });
+function renderAFC(){
+  const C = App.C, {part, ids, res} = App.afc, out = $('#afcOut'); out.innerHTML='';
+  const ax = +$('#aX').value, ay = +$('#aY').value, showM = $('#aShow').value, nLab = +$('#aLab').value||80;
+  const pts = [];
+  if(showM!=='cols'){
+    const rows = [...res.rows].sort((a,b)=>(b.ctr[ax]+b.ctr[ay])-(a.ctr[ax]+a.ctr[ay])).slice(0,nLab);
+    const maxF = Math.max(...rows.map(r=>C.freq[ids[r.index]]));
+    for(const r of rows){ const f=ids[r.index]; pts.push({x:r.coords[ax], y:r.coords[ay], label:C.forms[f], color:'#2e6da4', size:10+8*Math.sqrt(C.freq[f]/maxF)}); }
+  }
+  if(showM!=='rows') for(const c of res.cols) pts.push({x:c.coords[ax], y:c.coords[ay], label:part.labels[c.index], color:'#b8322a', size:14, bold:true, shape:'square'});
+  const pct = k=>fx(100*res.eig[k]/res.total,2)+' %';
+  out.appendChild(chartBox(scatterPlot(pts,{xlab:`Axe ${ax+1} (${pct(ax)})`, ylab:`Axe ${ay+1} (${pct(ay)})`}),`afc_axes_${ax+1}_${ay+1}`,{title:`Plan factoriel ${ax+1}-${ay+1} · ${partTitle(part)}`, zoom:true,
+    legend:`<div class="legend"><span><i style="background:#b8322a"></i>Parties</span><span><i style="background:#2e6da4"></i>Formes (taille selon la fréquence)</span><span class="muted">Inertie totale : ${fx(res.total,4)}</span></div>`}));
+  const g = document.createElement('div'); g.className='grid2';
+  g.appendChild(chartBox(barChart(res.eig.map((l,k)=>({label:'Axe '+(k+1), value:100*l/res.total, color:k===ax||k===ay?'#2f5d8a':'#9aa5b1'})),{ylab:'% de l\'inertie',h:300,w:520}),'afc_valeurs_propres',{title:'Valeurs propres'}));
+  g.appendChild(card(makeTable({title:'Valeurs propres', cols:[{key:'k',label:'Axe'},{key:'l',label:'Valeur propre',num:true,fmt:v=>fx(v,5)},{key:'p',label:'%',num:true,fmt:v=>fx(v,2)},{key:'c',label:'% cumulé',num:true,fmt:v=>fx(v,2)}],
+    rows:(()=>{ let c=0; return res.eig.map((l,k)=>{ c+=100*l/res.total; return {k:'Axe '+(k+1), l, p:100*l/res.total, c}; }); })(), filter:false, csv:'afc_valeurs_propres'})));
+  out.appendChild(g);
+  const nA = Math.min(res.nAx, 5);
+  const mkCols = first=>{ const cols=[first,{key:'mass',label:'Masse',num:true,fmt:v=>fx(v,4)}]; for(let k=0;k<nA;k++) cols.push({key:'c'+k,label:'F'+(k+1),num:true,fmt:v=>fx(v,3)}); for(let k=0;k<nA;k++) cols.push({key:'t'+k,label:'CTR'+(k+1)+' %',num:true,fmt:v=>fx(v,1)}); for(let k=0;k<nA;k++) cols.push({key:'q'+k,label:'cos² '+(k+1),num:true,fmt:v=>fx(v,2)}); return cols; };
+  const mkRow = (o,x)=>{ for(let k=0;k<nA;k++){ o['c'+k]=x.coords[k]; o['t'+k]=100*x.ctr[k]; o['q'+k]=x.cos2[k]; } o.mass=x.mass; return o; };
+  out.appendChild(card(makeTable({title:'Parties (colonnes)', cols:mkCols({key:'label',label:'Partie'}), rows:res.cols.map(c=>mkRow({label:part.labels[c.index]},c)), csv:'afc_parties', height:360, filter:false})));
+  out.appendChild(card(makeTable({title:'Formes (lignes)', cols:mkCols({key:'label',label:'Forme'}), rows:res.rows.map(r=>mkRow({label:C.forms[ids[r.index]]},r)), sortKey:'t'+ax, csv:'afc_formes', height:480, onRow:r=>openConcord(exactQuery(r.label))})));
+}
+
+/* ---------- Classification de Reinert ---------- */
+function getSegs(size){ if(!App.segCache[size]) App.segCache[size] = LX.segments(App.C, size); return App.segCache[size]; }
+$('#kGo').onclick = ()=>busy(()=>{
+  const C = App.C, size = +$('#kSize').value||40, minF = +$('#kMin').value||3;
+  const segs = getSegs(size);
+  const res = LX.chd(C, segs, {nClasses:+$('#kK').value||5, minFreq:minF, minSeg:+$('#kMinSeg').value||0});
+  const prof = LX.chdProfiles(C, segs, res, {minFreq:minF});
+  App.chd = {segs, res, prof, size, cur:0, tab:'profil'};
+  renderCHD();
+});
+function renderCHD(){
+  const C = App.C, {segs, res, prof} = App.chd, out = $('#chdOut'); out.innerHTML='';
+  if(res.K<2){ out.innerHTML = '<div class="card empty">Le corpus est trop petit pour être classé avec ces réglages. Réduisez la taille des segments, l\'effectif minimal ou la fréquence minimale.</div>'; return; }
+  out.insertAdjacentHTML('beforeend', `<p class="muted">${fmt(res.nSegs)} segments de texte · ${fmt(res.nClassified)} classés (${fx(100*res.nClassified/res.nSegs,1)} %) · ${fmt(res.nWords)} formes actives · ${res.K} classes · effectif minimal ${res.minSeg} segments.</p>`);
+  out.appendChild(chartBox(dendroSVG(res, prof),'chd_dendrogramme',{title:'Dendrogramme et profils des classes'}));
+  const nav = document.createElement('div'); nav.className='card';
+  nav.innerHTML = `<div class="tools">${Array.from({length:res.K},(_,k)=>`<button class="b2 cls${k===App.chd.cur?' on':''}" data-k="${k}" style="border-left:5px solid ${col(k)}">Classe ${k+1} · ${fx(100*prof.nk[k]/prof.Ns,1)} %</button>`).join('')}</div>
+    <div class="tools">${[['profil','Formes caractéristiques'],['anti','Anti-profil'],['vars','Variables'],['segs','Segments caractéristiques'],['afc','AFC des classes']].map(([v,l])=>`<button class="b2 tab${App.chd.tab===v?' on':''}" data-t="${v}">${l}</button>`).join('')}</div><div class="body"></div>`;
+  nav.querySelectorAll('.cls').forEach(b=>b.onclick=()=>{ App.chd.cur=+b.dataset.k; if(App.chd.tab==='afc') App.chd.tab='profil'; renderCHD(); });
+  nav.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{ App.chd.tab=b.dataset.t; renderCHD(); });
+  out.appendChild(nav);
+  const body = nav.querySelector('.body'), k = App.chd.cur, cl = prof.classes[k], tab = App.chd.tab;
+  if(tab==='profil'){
+    body.appendChild(makeTable({title:`Classe ${k+1} : ${fmt(prof.nk[k])} segments`, cols:[
+        {key:'form',label:'Forme',cls:x=>x.stop?'stop':''},{key:'a',label:'Seg. dans la classe',num:true},{key:'tot',label:'Seg. au total',num:true},{key:'pct',label:'%',num:true,fmt:v=>fx(v,1)},
+        {key:'chi2',label:'Khi²',num:true,fmt:v=>fx(v,2),cls:x=>x.chi2>=3.84?'pos':''},{key:'p',label:'p',num:true,fmt:fp}],
+      rows:cl.rows, sortKey:'chi2', csv:`chd_classe${k+1}_profil`, height:540, onRow:r=>openConcord(exactQuery(r.form))}));
+  } else if(tab==='anti'){
+    const K = prof.K, rows = [];
+    for(let e=0;e<prof.E;e++){ const x=prof.chi[e*K+k]; if(x<0) rows.push({form:C.forms[prof.forms[e]], a:prof.cnt[e*K+k], tot:prof.tot[e], chi2:x, p:LX.chi2p(-x), stop:C.isStop[prof.forms[e]]}); }
+    body.appendChild(makeTable({title:`Classe ${k+1} : formes sous-représentées`, cols:[{key:'form',label:'Forme',cls:x=>x.stop?'stop':''},{key:'a',label:'Seg. dans la classe',num:true},{key:'tot',label:'Seg. au total',num:true},{key:'chi2',label:'Khi²',num:true,fmt:v=>fx(v,2),cls:x=>x.chi2<=-3.84?'neg':''},{key:'p',label:'p',num:true,fmt:fp}],
+      rows, sortKey:'chi2', sortDir:1, csv:`chd_classe${k+1}_antiprofil`, height:540}));
+  } else if(tab==='vars'){
+    if(!cl.vars.length){ body.innerHTML = '<div class="empty">Le corpus n\'a pas de variables étoilées.</div>'; }
+    else body.appendChild(makeTable({title:`Classe ${k+1} : modalités des variables`, cols:[{key:'v',label:'Modalité'},{key:'a',label:'Seg. dans la classe',num:true},{key:'tot',label:'Seg. au total',num:true},{key:'pct',label:'%',num:true,fmt:v=>fx(v,1)},{key:'chi2',label:'Khi²',num:true,fmt:v=>fx(v,2),cls:x=>x.chi2>=3.84?'pos':x.chi2<=-3.84?'neg':''},{key:'p',label:'p',num:true,fmt:fp}],
+      rows:cl.vars, sortKey:'chi2', csv:`chd_classe${k+1}_variables`, height:440}));
+  } else if(tab==='segs'){
+    const top = new Set(cl.rows.filter(r=>r.chi2>=3.84 && !r.stop).map(r=>r.form));
+    body.innerHTML = cl.segs.map(({si,score})=>{
+      const s = segs[si], t = C.texts[s.text]; let h = '', pos = C.tokStart[s.start];
+      for(let i=s.start;i<s.end;i++){ h += esc(t.text.slice(pos, C.tokStart[i])); const w = t.text.slice(C.tokStart[i], C.tokEnd[i]); h += top.has(C.forms[C.tokForm[i]]) ? `<mark>${esc(w)}</mark>` : esc(w); pos = C.tokEnd[i]; }
+      return `<div class="seg" style="border-left-color:${col(k)}"><div class="muted">score ${fx(score,1)} · ${esc(t.name)} ${esc(Object.entries(t.vars).map(([a,b])=>'*'+a+'_'+b).join(' '))}</div>${h}</div>`;
+    }).join('');
+  } else if(tab==='afc'){
+    if(res.K<3){ body.innerHTML = '<div class="empty">Il faut au moins 3 classes pour l\'AFC des classes.</div>'; return; }
+    const K = res.K, chosen = new Set();
+    for(let c=0;c<K;c++) prof.classes[c].rows.filter(r=>r.chi2>=3.84 && !r.stop).slice(0,40).forEach(r=>chosen.add(r.e));
+    const rowsE = [...chosen], M = new Float64Array(rowsE.length*K);
+    rowsE.forEach((e,i)=>{ for(let c=0;c<K;c++) M[i*K+c] = prof.cnt[e*K+c]; });
+    const r2 = LX.ca(M, rowsE.length, K, 4);
+    if(!r2 || r2.nAx<2){ body.innerHTML = '<div class="empty">AFC impossible sur ces classes.</div>'; return; }
+    const pts = [];
+    for(const r of r2.rows){ const e=rowsE[r.index]; let bk=0,bx=-Infinity; for(let c=0;c<K;c++) if(prof.chi[e*K+c]>bx){ bx=prof.chi[e*K+c]; bk=c; } pts.push({x:r.coords[0], y:r.coords[1], label:C.forms[prof.forms[e]], color:col(bk), size:10+Math.min(12,Math.sqrt(bx))}); }
+    for(const c of r2.cols) pts.push({x:c.coords[0], y:c.coords[1], label:'Classe '+(c.index+1), color:col(c.index), size:16, bold:true, shape:'square'});
+    body.appendChild(chartBox(scatterPlot(pts,{xlab:`Axe 1 (${fx(100*r2.eig[0]/r2.total,1)} %)`, ylab:`Axe 2 (${fx(100*r2.eig[1]/r2.total,1)} %)`}),'chd_afc_classes',{title:'AFC des classes (formes caractéristiques × classes)',zoom:true}));
+  }
+}
+function dendroSVG(res, prof){
+  const K = res.K, colW = 150, W = Math.max(560, K*colW+40), nW = 18;
+  let maxD = 0; (function d(n){ maxD=Math.max(maxD,n.depth); if(n.children) n.children.forEach(d); })(res.root);
+  const stepY = 34, top = 20, leafY = top+maxD*stepY+10;
+  const pos = new Map();
+  (function place(n){ if(!n.children){ pos.set(n,{x:20+colW*(n.cls+0.5), y:leafY}); return; } n.children.forEach(place); const a=pos.get(n.children[0]), b=pos.get(n.children[1]); pos.set(n,{x:(a.x+b.x)/2, y:top+n.depth*stepY}); })(res.root);
+  const H = leafY+70+nW*21+20;
+  let s = svgOpen(W,H);
+  (function draw(n){ if(!n.children) return; const p=pos.get(n); for(const c of n.children){ const q=pos.get(c); s+=`<path d="M${p.x} ${p.y} H${q.x} V${q.y}" fill="none" stroke="#555" stroke-width="1.6"/>`; draw(c); } })(res.root);
+  for(const lf of res.leaves){
+    const k = lf.cls, p = pos.get(lf), x = p.x;
+    s += `<rect x="${x-colW/2+8}" y="${leafY}" width="${colW-16}" height="46" rx="5" fill="${col(k)}"/>`;
+    s += `<text x="${x}" y="${leafY+19}" text-anchor="middle" fill="#fff" font-weight="700" font-size="14">Classe ${k+1}</text>`;
+    s += `<text x="${x}" y="${leafY+37}" text-anchor="middle" fill="#fff" font-size="12">${fmt(prof.nk[k])} seg. · ${fx(100*prof.nk[k]/prof.Ns,1)} %</text>`;
+    const rows = prof.classes[k].rows.filter(r=>!r.stop && r.chi2>=3.84).slice(0,nW), mx = rows.length ? rows[0].chi2 : 1;
+    rows.forEach((r,i)=>{ const fs = 11+10*Math.sqrt(r.chi2/mx); s += `<text x="${x}" y="${leafY+72+i*21}" text-anchor="middle" fill="${col(k)}" font-size="${fs.toFixed(1)}" font-weight="${i<3?700:500}">${esc(r.form)}<title>khi² ${fx(r.chi2,1)}</title></text>`; });
+  }
+  return s+'</svg>';
+}
+
+/* ---------- Similitudes ---------- */
+$('#gGo').onclick = ()=>busy(()=>{
+  const C = App.C, unit = $('#gUnit').value, size = +$('#kSize').value||40;
+  const units = unit==='text' ? C.texts.map((t,i)=>({start:t.tokFirst,end:t.tokLast,text:i})) : getSegs(size);
+  const r = LX.similitudes(C, units, {nWords:+$('#gN').value||60, index:$('#gIdx').value});
+  const out = $('#similOut'); out.innerHTML='';
+  if(r.nodes.length<2 || !r.edges.length){ out.innerHTML = '<div class="card empty">Pas assez de cooccurrences pour construire un graphe.</div>'; return; }
+  let colors, legend = '';
+  const cm = $('#gCol').value;
+  if(cm==='chd' && App.chd){
+    const P = App.chd.prof;
+    colors = r.nodes.map(nd=>{ const e=P.elig[nd.f]; if(e<0) return '#888'; let bk=-1,bx=3.84; for(let c=0;c<P.K;c++) if(P.chi[e*P.K+c]>bx){ bx=P.chi[e*P.K+c]; bk=c; } return bk<0 ? '#b5b5b5' : col(bk); });
+    legend = `<div class="legend">${Array.from({length:P.K},(_,k)=>`<span><i style="background:${col(k)}"></i>Classe ${k+1}</span>`).join('')}<span><i style="background:#b5b5b5"></i>Non caractéristique</span></div>`;
+  } else if(cm==='chd'){
+    colors = r.nodes.map(()=>'#2f5d8a'); legend = '<p class="muted">Lancez d\'abord la classification de Reinert pour colorer selon les classes.</p>';
+  } else if(cm==='comm'){
+    colors = r.nodes.map((_,i)=>col(r.comm[i]+3));
+  } else colors = r.nodes.map(()=>'#2f5d8a');
+  out.appendChild(graphBox(r.nodes, r.edges, colors, legend, $('#gW').checked, $('#gIdx').value));
+});
+function graphBox(nodes, edges, colors, legend, showW, idx){
+  const W = 1100, H = 780, n = nodes.length, lay = LX.forceLayout(n, edges, W, H);
+  const maxF = Math.max(...nodes.map(d=>d.freq)), maxW = Math.max(...edges.map(e=>e.w));
+  let s = svgOpen(W,H);
+  s += edges.map((e,i)=>`<line data-e="${i}" x1="${lay.x[e.a].toFixed(1)}" y1="${lay.y[e.a].toFixed(1)}" x2="${lay.x[e.b].toFixed(1)}" y2="${lay.y[e.b].toFixed(1)}" stroke="#a8b2bd" stroke-width="${(0.8+6*e.w/maxW).toFixed(2)}" stroke-linecap="round"/>`).join('');
+  if(showW) s += edges.map((e,i)=>`<text data-w="${i}" x="${((lay.x[e.a]+lay.x[e.b])/2).toFixed(1)}" y="${((lay.y[e.a]+lay.y[e.b])/2).toFixed(1)}" font-size="10" fill="#777" text-anchor="middle">${idx==='jaccard'?fx(e.w,2):e.co}</text>`).join('');
+  s += nodes.map((d,i)=>{ const r=6+18*Math.sqrt(d.freq/maxF), fs=11+13*Math.sqrt(d.freq/maxF);
+    return `<g data-node="${i}" transform="translate(${lay.x[i].toFixed(1)} ${lay.y[i].toFixed(1)})" style="cursor:move"><circle r="${r.toFixed(1)}" fill="${colors[i]}" fill-opacity=".18" stroke="${colors[i]}" stroke-width="1.2"/><text text-anchor="middle" dy=".35em" font-size="${fs.toFixed(1)}" font-weight="600" fill="${colors[i]}" stroke="#fff" stroke-width="3" paint-order="stroke">${esc(d.form)}</text><title>${esc(d.form)} · fréquence ${d.freq}</title></g>`; }).join('');
+  s += '</svg>';
+  const box = chartBox(s,'similitudes',{title:`Analyse de similitudes : ${n} formes, arbre maximum`, zoom:true, legend});
+  const svg = box.querySelector('svg'), X = Array.from(lay.x), Y = Array.from(lay.y);
+  const lines = [...svg.querySelectorAll('line[data-e]')], wl = [...svg.querySelectorAll('text[data-w]')];
+  const adj = Array.from({length:n},()=>[]); edges.forEach((e,i)=>{ adj[e.a].push(i); adj[e.b].push(i); });
+  let drag = null;
+  svg.addEventListener('pointerdown', e=>{ const g=e.target.closest('[data-node]'); if(!g) return; e.stopPropagation(); drag={i:+g.dataset.node, g}; svg.setPointerCapture(e.pointerId); });
+  svg.addEventListener('pointermove', e=>{
+    if(!drag) return;
+    const pt = svg.createSVGPoint(); pt.x=e.clientX; pt.y=e.clientY; const p = pt.matrixTransform(svg.getScreenCTM().inverse());
+    const i = drag.i; X[i]=p.x; Y[i]=p.y; drag.g.setAttribute('transform',`translate(${p.x} ${p.y})`);
+    for(const ei of adj[i]){ const ed=edges[ei], l=lines[ei]; l.setAttribute('x1',X[ed.a]); l.setAttribute('y1',Y[ed.a]); l.setAttribute('x2',X[ed.b]); l.setAttribute('y2',Y[ed.b]); if(wl[ei]){ wl[ei].setAttribute('x',(X[ed.a]+X[ed.b])/2); wl[ei].setAttribute('y',(Y[ed.a]+Y[ed.b])/2); } }
+  });
+  svg.addEventListener('pointerup', ()=>{ drag=null; });
+  return box;
+}
+
+/* ---------- Nuage de mots ---------- */
+$('#wGo').onclick = ()=>busy(()=>{
+  const C = App.C, n = +$('#wN').value||100, excl = $('#wStop').checked, src = $('#wSrc').value;
+  let freq = C.freq;
+  if(src!=='all'){
+    const [v,m] = src.split('\u0001'); freq = new Int32Array(C.F);
+    for(let i=0;i<C.N;i++) if(C.texts[C.tokText[i]].vars[v]===m) freq[C.tokForm[i]]++;
+  }
+  const ids = []; for(let f=0;f<C.F;f++) if(freq[f]>0 && (!excl || !C.isStop[f])) ids.push(f);
+  ids.sort((a,b)=>freq[b]-freq[a]); ids.length = Math.min(ids.length,n);
+  const out = $('#cloudOut'); out.innerHTML='';
+  if(!ids.length){ out.innerHTML='<div class="card empty">Aucune forme à afficher.</div>'; return; }
+  const box = card(`<div class="tools"><b>${ids.length} formes</b><span style="flex:1"></span><button class="b2 pn">PNG</button></div><canvas width="1200" height="720" style="width:100%;height:auto;border:1px solid var(--line);border-radius:6px"></canvas>`);
+  out.appendChild(box);
+  const cv = box.querySelector('canvas');
+  drawCloud(cv, ids.map(f=>({t:C.forms[f], v:freq[f]})));
+  box.querySelector('.pn').onclick = ()=>cv.toBlob(b=>download(b,'nuage.png'),'image/png');
+});
+function drawCloud(cv, words){
+  const ctx = cv.getContext('2d'), W = cv.width, H = cv.height;
+  ctx.fillStyle = '#fff'; ctx.fillRect(0,0,W,H); ctx.textBaseline = 'top';
+  const mx = words[0].v, mn = words[words.length-1].v, placed = [];
+  const colors = ['#1f4e79','#b8322a','#2c7a3f','#6a3d9a','#c0620a','#1d7f8c','#7a4b2a','#a1286a'];
+  words.forEach((w,wi)=>{
+    const size = 14+(78-14)*Math.sqrt((w.v-mn)/((mx-mn)||1));
+    ctx.font = `${wi<10?700:600} ${size.toFixed(0)}px ${FONT}`;
+    const tw = ctx.measureText(w.t).width, th = size*1.05;
+    for(let t=0;t<6000;t++){
+      const a = t*0.11, r = 1.2*a;
+      const x = W/2 + r*Math.cos(a)*1.6 - tw/2, y = H/2 + r*Math.sin(a) - th/2;
+      if(x<4 || y<4 || x+tw>W-4 || y+th>H-4) continue;
+      if(placed.some(p=> x < p.x+p.w+3 && x+tw+3 > p.x && y < p.y+p.h+1 && y+th+1 > p.y)) continue;
+      placed.push({x,y,w:tw,h:th}); ctx.fillStyle = colors[wi%colors.length]; ctx.fillText(w.t, x, y+size*0.05); break;
+    }
+  });
+}
+
+/* ---------- Corpus d'exemple (textes inventés) ---------- */
+const DEMO = `**** *sexe_f *age_jeune *quartier_centre
+Dans mon quartier, ce que j'apprécie le plus, ce sont les commerces de proximité. Le boulanger, le marché du samedi matin, la petite librairie au coin de la rue. On fait toutes ses courses à pied. Par contre les loyers ont beaucoup augmenté et beaucoup de jeunes comme moi ont du mal à se loger. Le soir il y a du bruit à cause des bars, mais c'est aussi ce qui rend le quartier vivant.
+
+**** *sexe_h *age_senior *quartier_periph
+J'habite ici depuis trente ans. Le quartier a changé : il y avait une usine, maintenant ce sont des immeubles neufs. Le problème principal, c'est le bus. Il passe toutes les vingt minutes et il est souvent en retard. Pour aller à l'hôpital je dois prendre deux bus et un tramway. Sans voiture on est coincés. Je voudrais une ligne directe vers le centre et des horaires plus fréquents le dimanche.
+
+**** *sexe_f *age_senior *quartier_centre
+Le parc est la meilleure chose du quartier. Je m'y promène tous les matins avec mon chien. Les arbres, les bancs à l'ombre, le petit étang avec les canards. On y croise des voisins, on discute. En été la mairie organise des concerts sous les arbres. J'aimerais seulement que les pelouses soient mieux entretenues et qu'on plante davantage de fleurs dans le parc.
+
+**** *sexe_h *age_jeune *quartier_periph
+Pour moi le quartier c'est surtout le trajet. Je travaille de l'autre côté de la ville, je prends le tramway puis le métro, presque une heure le matin et autant le soir. Les rames sont pleines, il faut attendre plusieurs passages. Une piste cyclable sécurisée changerait tout, je pourrais aller au travail à vélo. Aujourd'hui la route est trop dangereuse, les voitures roulent vite.
+
+**** *sexe_f *age_jeune *quartier_periph
+Avec deux enfants, je regarde d'abord l'école et la crèche. L'école primaire est à cinq minutes, les maîtresses sont attentives, mais les classes sont chargées. Il manque une crèche, j'ai attendu un an pour avoir une place. Le mercredi les enfants vont au centre de loisirs, c'est pratique. Il faudrait aussi une aire de jeux plus grande pour les enfants, celle du square est vieille.
+
+**** *sexe_h *age_senior *quartier_centre
+Ce qui me plaît, c'est la vie culturelle. Le cinéma de quartier, la médiathèque, le théâtre municipal. Je vais à une exposition presque chaque semaine. Les associations proposent des conférences, des ateliers d'écriture, des cours de musique. C'est un quartier où on ne s'ennuie pas. Je regrette que les tarifs du théâtre aient augmenté, ce n'est plus accessible à tout le monde.
+
+**** *sexe_f *age_senior *quartier_periph
+Je me sens parfois isolée. Beaucoup de voisins sont partis, les nouveaux ne disent pas bonjour. Le soir je n'ose plus sortir seule, l'éclairage est mauvais dans la rue et il y a eu des cambriolages. Avant on se connaissait tous, on s'entraidait entre voisins. Heureusement l'association du quartier organise des repas et des goûters, ça permet de rencontrer du monde.
+
+**** *sexe_h *age_jeune *quartier_centre
+Le quartier est bien desservi : métro, bus, vélos en libre-service. Je n'ai pas de voiture et je n'en ai pas besoin. Je vais au travail en vélo en dix minutes. Le seul souci, c'est le stationnement des vélos, il n'y a pas assez d'arceaux et on se fait voler les selles. La ville devrait aussi élargir les pistes cyclables sur le boulevard.
+
+**** *sexe_f *age_jeune *quartier_centre
+J'adore les petits restaurants et les cafés du quartier. Le marché couvert est magnifique, on trouve des produits frais, des fromages, des légumes de producteurs locaux. Les commerçants nous connaissent et nous conseillent. Je fais attention à acheter local. Mais les prix sont élevés et les supermarchés sont loin, alors faire ses courses n'est pas toujours facile pour un petit budget.
+
+**** *sexe_h *age_senior *quartier_periph
+Le jardin partagé a changé ma retraite. Nous cultivons des tomates, des salades, des herbes aromatiques. Les enfants de l'école viennent planter des graines au printemps. La nature en ville, c'est important pour la santé. J'aimerais que le quartier garde ses espaces verts, car un projet de parking menace une partie des arbres près de la rivière.
+
+**** *sexe_f *age_senior *quartier_centre
+Ma préoccupation, c'est la sécurité. Il y a des jeunes qui traînent tard le soir devant l'immeuble, du bruit, parfois des disputes. Je ne me sens pas en sécurité quand je rentre la nuit. J'ai demandé plus de patrouilles de police et un meilleur éclairage dans la rue. La gardienne de l'immeuble est formidable, elle surveille et elle aide les personnes âgées.
+
+**** *sexe_h *age_jeune *quartier_periph
+Je joue au football au stade municipal deux fois par semaine. Les équipements sportifs sont corrects, il y a un gymnase et une piscine, mais les créneaux sont pleins. Les jeunes du quartier n'ont pas assez d'activités, alors certains s'ennuient le soir. Une maison des jeunes avec des animateurs, de la musique et du sport serait vraiment utile.
+
+**** *sexe_f *age_jeune *quartier_periph
+Le matin je dépose mon fils à l'école puis je prends le bus pour aller travailler. Si le bus est en retard, je suis en retard au travail. Il faudrait plus de bus aux heures de pointe et un arrêt plus proche de l'école. Le soir, la garderie ferme tôt, je dois courir. Les horaires des transports ne sont pas adaptés aux parents.
+
+**** *sexe_h *age_senior *quartier_centre
+J'aime me promener le long de la rivière. Les quais ont été aménagés, il y a des arbres, des bancs, une promenade pour les piétons. Les oiseaux reviennent. C'est un endroit calme, loin des voitures. Le dimanche des familles font du vélo et des pique-niques sur l'herbe. Il faut protéger cette nature et ne pas construire de nouveaux immeubles au bord de la rivière.
+
+**** *sexe_f *age_senior *quartier_periph
+Les commerces ferment les uns après les autres. La boucherie a fermé, la poste aussi. Il reste une pharmacie et une supérette. Pour faire les courses il faut aller au centre commercial en voiture. Les personnes âgées sans voiture sont pénalisées. Un marché hebdomadaire ou une épicerie solidaire ferait revivre la place du quartier et ses commerces.
+
+**** *sexe_h *age_jeune *quartier_centre
+Je vais souvent aux concerts de la salle de musique et aux expositions de la galerie. Il y a une vraie vie culturelle, des festivals de rue en été, du théâtre en plein air. Les artistes ont des ateliers dans les anciens entrepôts. Je trouve que le quartier attire de plus en plus de touristes, ce qui fait monter les loyers et les prix des logements.
+
+**** *sexe_f *age_jeune *quartier_centre
+Les voisins de mon immeuble sont très sympathiques. On a créé un groupe pour s'entraider, garder les enfants, prêter des outils. Une fois par an on organise la fête des voisins dans la cour. Cette solidarité rend la vie plus douce. Je connais même les commerçants par leur prénom. Pour moi un bon quartier, c'est d'abord des relations humaines entre voisins.
+
+**** *sexe_h *age_senior *quartier_periph
+Le tramway devait arriver dans le quartier il y a cinq ans, les travaux n'ont toujours pas commencé. En attendant, on prend la voiture, les bouchons sont terribles sur la route nationale. Les élus promettent une nouvelle ligne de bus, mais rien ne change. Les transports sont la priorité pour les habitants de la périphérie, avant tout le reste.`;
+})();
+</script>
+</body>
+</html>
