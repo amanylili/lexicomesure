@@ -71,6 +71,13 @@ svg.chart{width:100%;height:auto;display:block}
 .seg{border-left:4px solid #ccc;padding:6px 12px;margin:8px 0;font-size:13.5px;background:#fbfaf8}
 .seg .muted{font-size:12px}
 code{background:#f0efe9;padding:1px 5px;border-radius:3px;font-size:12.5px}
+.ctxbox,.seg,table.t td{unicode-bidi:plaintext}
+.ctxbox,.seg{text-align:start}
+table.t.kwic td{unicode-bidi:normal}
+body.rtl .kwic td.l,body.rtl .kwic td.r{white-space:normal;max-width:none;overflow:visible}
+body.rtl .kwic td.l{direction:rtl;text-align:left}
+body.rtl .kwic{font-family:inherit;font-size:14.5px;line-height:1.7}
+body.rtl .kwic td.r{text-align:right}
 .ctxbox{font-size:14px;line-height:1.6;background:#fbfaf8;border:1px solid var(--line);border-radius:6px;padding:10px 14px;margin-top:10px;white-space:pre-wrap}
 mark{background:#ffe7a3;padding:0 1px}
 .help h3{margin-top:18px}
@@ -121,6 +128,8 @@ mark{background:#ffe7a3;padding:0 1px}
       <label class="chk"><input type="checkbox" id="optLower" checked> Tout mettre en minuscules</label>
       <label class="chk"><input type="checkbox" id="optPlural"> Regrouper singulier et pluriel (approximatif)</label>
       <label class="chk"><input type="checkbox" id="optNum" checked> Traiter les nombres comme mots-outils</label>
+      <label class="chk"><input type="checkbox" id="optAr" checked> Arabe : normaliser (voyelles brèves, tatwil, alif)</label>
+      <label class="chk"><input type="checkbox" id="optArCl"> Arabe : détacher l'article et les proclitiques (approximatif)</label>
       <span style="flex:1"></span>
       <button class="b" id="analyse">Analyser le corpus</button>
     </div>
@@ -309,6 +318,7 @@ Texte du deuxième document…</code></pre>
     </ul>
     <h3>Limites à connaître</h3>
     <ul>
+      <li>Les textes en arabe sont pris en charge : voyelles brèves et tatwil sont retirés, les formes de l'alif unifiées, la ponctuation arabe (، ؛ ؟) reconnue, et une liste de mots-outils arabes est fournie. L'option de détachement des proclitiques (و، ف، ب، ك، ل + ال) est une approximation, pas une vraie analyse morphologique.</li>
       <li>Il n'y a pas de lemmatisation par dictionnaire : les analyses portent sur les formes graphiques, comme dans Lexico. L'option « Regrouper singulier et pluriel » ne fusionne que les formes en -s ou -x dont le singulier existe dans le corpus.</li>
       <li>La classification fait une CHD simple. Elle ne fait pas la double classification sur deux tailles de segments qu'Iramuteq propose.</li>
       <li>Les très gros corpus (plusieurs millions de mots) peuvent ralentir le navigateur.</li>
@@ -326,7 +336,8 @@ Texte du deuxième document…</code></pre>
 <script id="engine">
 const LX = (() => {
 "use strict";
-const DEFAULT_STOP = `a à â abord afin ah ai aie aient aies ait alors après as assez au aucun aucune aujourd'hui auquel aussi autre autres aux auxquelles auxquels avaient avais avait avant avec avez aviez avions avoir avons ayant ayez ayons bah beaucoup bien c' ça car ce ceci cela celle celles celui cependant certain certaine certaines certains ces cet cette ceux chacun chacune chaque chez ci comme comment d' dans de dedans dehors déjà depuis des dès desquelles desquels dessous dessus devant doit donc dont du duquel durant elle elles en encore entre es est et étaient étais était étant été êtes étiez étions être eu eue eues eurent eus eut eux fait faire fais faut fois font furent fut hors ici il ils j' je jusqu' jusque l' la là laquelle le lequel les lesquelles lesquels leur leurs lors lorsqu' lorsque lui m' ma mais me même mêmes mes moi moins mon n' ne ni non nos notre nous on ont or ou où oui par parce pas pendant peu peut peuvent plus plutôt pour pourquoi pourrait puis puisqu' puisque qu' quand que quel quelle quelles quels qui quoi s' sa sans se sera serait seront ses si sien sienne soi soient sois soit sommes son sont sous suis sur t' ta tant te tes toi ton tous tout toute toutes très tu un une unes uns vers via voici voilà vont vos votre vous y`;
+const DEFAULT_STOP = `a à â abord afin ah ai aie aient aies ait alors après as assez au aucun aucune aujourd'hui auquel aussi autre autres aux auxquelles auxquels avaient avais avait avant avec avez aviez avions avoir avons ayant ayez ayons bah beaucoup bien c' ça car ce ceci cela celle celles celui cependant certain certaine certaines certains ces cet cette ceux chacun chacune chaque chez ci comme comment d' dans de dedans dehors déjà depuis des dès desquelles desquels dessous dessus devant doit donc dont du duquel durant elle elles en encore entre es est et étaient étais était étant été êtes étiez étions être eu eue eues eurent eus eut eux fait faire fais faut fois font furent fut hors ici il ils j' je jusqu' jusque l' la là laquelle le lequel les lesquelles lesquels leur leurs lors lorsqu' lorsque lui m' ma mais me même mêmes mes moi moins mon n' ne ni non nos notre nous on ont or ou où oui par parce pas pendant peu peut peuvent plus plutôt pour pourquoi pourrait puis puisqu' puisque qu' quand que quel quelle quelles quels qui quoi s' sa sans se sera serait seront ses si sien sienne soi soient sois soit sommes son sont sous suis sur t' ta tant te tes toi ton tous tout toute toutes très tu un une unes uns vers via voici voilà vont vos votre vous y
+في من إلى على عن مع هذا هذه ذلك تلك هؤلاء أولئك الذي التي الذين اللذين اللتين اللاتي اللواتي ما ماذا لماذا كيف أين متى هل قد لقد لم لن لا ليس ليست كان كانت كانوا يكون تكون يكن أن إن أنه إنه أنها إنها لأن لكن ولكن بل ثم أو أم حتى إذا إذ لو لولا كل بعض غير بين عند عندما حين حيث منذ قبل بعد فوق تحت أمام خلف دون سوى هو هي هم هن هما أنا نحن أنت أنتم أنتن أنتما له لها لهم لهن لنا لي لك لكم به بها بهم بي بك بنا فيه فيها فيهم منه منها منهم عنه عنها عنهم عليه عليها عليهم إليه إليها إليهم و ف ب ل ك يا أي أيها أيتها ذا كذلك هكذا هنا هناك ثمة أيضا جدا فقط إلا وهو وهي وهم وقد ولا وما ومن وفي وإن وأن وإذا وكان وكانت فإن فلا فما فقد كما مما ممن عما بما لما إنما كأن كأنه كأنها لعل ليت مثل نحو إياه إياها عليك منك ولم ولن وكل وهذا وهذه وذلك تلك أما وأما`;
 
 function parseStop(txt){
   return new Set(normalize(txt).toLocaleLowerCase('fr').split(/[\s,;]+/).filter(Boolean));
@@ -361,10 +372,20 @@ function parseCorpus(raw){
 }
 
 /* ---------- Segmentation en occurrences ---------- */
-const TOK_RE = /(aujourd'hui|[\p{L}\p{N}]+(?:-[\p{L}\p{N}]+)*(?:'(?=\p{L}))?)|([.!?…;:]+)|([,()«»"“”\[\]{}—–\/]+)|(\n[ \t]*\n)/giu;
+const WRD = "[\\p{L}\\p{N}][\\p{L}\\p{N}\\p{M}\\u200C\\u200D]*";
+const TOK_RE = new RegExp("(aujourd'hui|"+WRD+"(?:-"+WRD+")*(?:'(?=\\p{L}))?)|([.!?…;:؟؛۔]+)|([,()«»\"“”\\[\\]{}—–\\/،]+)|(\\n[ \\t]*\\n)","giu");
+// Arabe : normalisation orthographique et détachement approximatif des proclitiques
+function arNorm(w){ return w.replace(/[\u064B-\u065F\u0670\u0640]/g,'').replace(/[أإآٱ]/g,'ا').replace(/ى/g,'ي'); }
+function arStrip(w){
+  let m = w.replace(/^[وف]?[بكل]?ال(?=[\u0621-\u064A]{3,}$)/,'');
+  if(m===w) m = w.replace(/^[وف]?لل(?=[\u0621-\u064A]{3,}$)/,'');
+  return m;
+}
 
 function buildCorpus(texts, opt){
-  const lower = opt.lower !== false, stop = opt.stop || new Set();
+  const lower = opt.lower !== false;
+  let stop = opt.stop || new Set();
+  if(opt.arNorm) stop = new Set([...stop].map(arNorm));
   const raw = [], tText = [], tStart = [], tEnd = [], tBrk = [];
   texts.forEach((tx,ti)=>{
     let brk = 3, m; TOK_RE.lastIndex = 0;
@@ -372,6 +393,8 @@ function buildCorpus(texts, opt){
     while((m = TOK_RE.exec(tx.text))){
       if(m[1]){
         let w = m[1]; if(lower) w = w.toLocaleLowerCase('fr');
+        if(opt.arNorm) w = arNorm(w);
+        if(!/[\p{L}\p{N}]/u.test(w.replace(/\u0640/g,''))){ brk = Math.max(brk,1); continue; }
         raw.push(w); tText.push(ti); tStart.push(m.index); tEnd.push(m.index+m[1].length); tBrk.push(brk); brk = 0;
       } else if(m[2] || m[4]) brk = Math.max(brk,2);
       else brk = Math.max(brk,1);
@@ -380,11 +403,14 @@ function buildCorpus(texts, opt){
   });
   const cnt = new Map(); for(const w of raw) cnt.set(w,(cnt.get(w)||0)+1);
   const merge = new Map();
+  if(opt.arClitics){
+    for(const w of cnt.keys()){ if(stop.has(w)) continue; const b = arStrip(w); if(b!==w) merge.set(w,b); }
+  }
   if(opt.plural){
     for(const w of cnt.keys()){
       if(w.length>3 && /[sx]$/.test(w) && !stop.has(w)){
         const b = w.slice(0,-1);
-        if(cnt.has(b) && !stop.has(b)) merge.set(w,b);
+        if(cnt.has(b) && !stop.has(b) && !merge.has(w)) merge.set(w,b);
       }
     }
   }
@@ -405,7 +431,9 @@ function buildCorpus(texts, opt){
   for(const k in vars) vars[k] = [...vars[k]].sort((a,b)=>a.localeCompare(b,'fr',{numeric:true}));
   const lf = new Float64Array(N+2);
   for(let i=2;i<N+2;i++) lf[i] = lf[i-1] + Math.log(i);
-  return {texts, forms, fid, freq, isStop, N, F, tokForm,
+  const normForm = x=>{ if(lower) x = x.toLocaleLowerCase('fr'); if(opt.arNorm) x = arNorm(x); if(merge.has(x)) return merge.get(x); return (opt.arClitics && !stop.has(x)) ? arStrip(x) : x; };
+  let nAr = 0, nL = 0; for(const t of texts){ const sm = t.text.slice(0,20000); nL += (sm.match(/\p{L}/gu)||[]).length; nAr += (sm.match(/[\u0590-\u08FF]/g)||[]).length; }
+  return {normForm, rtl: nL>0 && nAr/nL>0.3, texts, forms, fid, freq, isStop, N, F, tokForm,
     tokText:Int32Array.from(tText), tokStart:Int32Array.from(tStart), tokEnd:Int32Array.from(tEnd), tokBrk:Uint8Array.from(tBrk),
     vars, variants:variants.map(s=>[...s]), lf};
 }
@@ -885,7 +913,7 @@ function compileQuery(C, q){
     let rx;
     try {
       rx = p.re!==undefined ? new RegExp('^(?:'+p.re+')$','iu')
-        : new RegExp('^(?:'+p.w.split('|').map(x=>x.replace(/[.+?^${}()[\]\\\/]/g,'\\$&').replace(/\*/g,'.*')).join('|')+')$','iu');
+        : new RegExp('^(?:'+p.w.split('|').map(x=>(x.includes('*') ? (C.normForm ? arNorm(x) : x) : (C.normForm ? C.normForm(x) : x)).replace(/[.+?^${}()[\]\\\/]/g,'\\$&').replace(/\*/g,'.*')).join('|')+')$','iu');
     } catch(e){ throw new Error('Expression régulière invalide : '+e.message); }
     const mk = new Uint8Array(C.F);
     for(let f=0;f<C.F;f++) if(rx.test(C.forms[f])) mk[f]=1;
@@ -1193,8 +1221,9 @@ function analyse(){
   if(!raw.trim()){ alert('Le corpus est vide : collez un texte, ouvrez un fichier ou chargez l\'exemple.'); return; }
   busy(()=>{
     const texts = LX.parseCorpus(raw);
-    const C = LX.buildCorpus(texts, {lower:$('#optLower').checked, plural:$('#optPlural').checked, numStop:$('#optNum').checked, stop:LX.parseStop($('#stopList').value)});
+    const C = LX.buildCorpus(texts, {lower:$('#optLower').checked, plural:$('#optPlural').checked, numStop:$('#optNum').checked, arNorm:$('#optAr').checked, arClitics:$('#optArCl').checked, stop:LX.parseStop($('#stopList').value)});
     if(C.N===0){ alert('Aucun mot n\'a été trouvé dans ce corpus.'); return; }
+    document.body.classList.toggle('rtl', !!C.rtl);
     App.C = C; App.segCache = {}; App.chd = null; App.spec = null; App.afc = null;
     ['statsOut','dicoOut','concordOut','repeatOut','specifOut','ventilOut','afcOut','chdOut','similOut','cloudOut'].forEach(id=>$('#'+id).innerHTML='');
     $('#sViewBar').style.display='none'; $('#aPlotBar').style.display='none';
@@ -1230,7 +1259,7 @@ function renderTextsList(){
   const tb = makeTable({title:'Textes du corpus', cols:[
       {key:'n',label:'N°',num:true},{key:'name',label:'Nom'},{key:'vars',label:'Variables',fmt:v=>v.split(' ').filter(Boolean).map(x=>`<span class="pill">${esc(x)}</span>`).join('')},{key:'occ',label:'Occurrences',num:true,fmt:fmt}],
     rows, csv:'textes', height:320, filterKey:'vars',
-    onRow:r=>{ const t=C.texts[r.i]; viewer.innerHTML=`<div class="ctxbox"><b>${esc(t.name)}</b>  <span class="muted">${esc(rows[r.i].vars)}</span>\n\n${esc(t.text)}</div>`; }});
+    onRow:r=>{ const t=C.texts[r.i]; viewer.innerHTML=`<div class="ctxbox" dir="auto"><b>${esc(t.name)}</b>  <span class="muted">${esc(rows[r.i].vars)}</span>\n\n${esc(t.text)}</div>`; }});
   const c = card(tb); c.appendChild(viewer); out.appendChild(c);
 }
 
@@ -1292,11 +1321,11 @@ function runConcord(){
     const MAX = 3000, shown = lines.slice(0,MAX);
     const box = document.createElement('div'); box.className='card';
     box.innerHTML = `<div class="tools"><b>${fmt(hits.length)} occurrence${hits.length>1?'s':''}</b><span class="muted">dans ${fmt(new Set(hits.map(i=>C.tokText[i])).size)} texte(s)${hits.length>MAX?` · ${fmt(MAX)} lignes affichées`:''} · cliquez sur une ligne pour lire le contexte élargi</span><span style="flex:1"></span><button class="b2 csv">Exporter CSV</button></div>
-      <div class="tw" style="max-height:460px"><table class="t kwic"><tbody>${shown.map((k,j)=>`<tr class="click" data-j="${j}"><td class="muted" style="font-family:${FONT};font-size:11.5px">${esc(C.texts[k.text].name)}</td><td class="l"><span>${esc(k.left)}</span></td><td class="p">${esc(k.pivot)}</td><td class="r">${esc(k.right)}</td></tr>`).join('')}</tbody></table></div><div class="ctx"></div>`;
+      <div class="tw" style="max-height:460px"><table class="t kwic"${C.rtl?' dir="rtl"':''}><tbody>${shown.map((k,j)=>`<tr class="click" data-j="${j}"><td class="muted" style="font-family:${FONT};font-size:11.5px">${esc(C.texts[k.text].name)}</td><td class="l"><span>${esc(k.left)}</span></td><td class="p">${esc(k.pivot)}</td><td class="r">${esc(k.right)}</td></tr>`).join('')}</tbody></table></div><div class="ctx"></div>`;
     box.querySelector('tbody').onclick = e=>{
       const tr = e.target.closest('tr'); if(!tr) return; const k = shown[+tr.dataset.j];
       const w = LX.kwic(C, k.i, L, 80), t = C.texts[k.text];
-      box.querySelector('.ctx').innerHTML = `<div class="ctxbox"><b>${esc(t.name)}</b> <span class="muted">${esc(Object.entries(t.vars).map(([a,b])=>'*'+a+'_'+b).join(' '))}</span>\n\n…${esc(w.left)}<mark>${esc(w.pivot)}</mark>${esc(w.right)}…</div>`;
+      box.querySelector('.ctx').innerHTML = `<div class="ctxbox" dir="auto"><b>${esc(t.name)}</b> <span class="muted">${esc(Object.entries(t.vars).map(([a,b])=>'*'+a+'_'+b).join(' '))}</span>\n\n…${esc(w.left)}<mark>${esc(w.pivot)}</mark>${esc(w.right)}…</div>`;
     };
     box.querySelector('.csv').onclick = ()=>download(toCSV([{key:'t',label:'Texte'},{key:'left',label:'Contexte gauche'},{key:'pivot',label:'Pôle'},{key:'right',label:'Contexte droit'}], lines.map(k=>({...k,t:C.texts[k.text].name}))),'concordance.csv','text/csv;charset=utf-8');
     out.appendChild(box);
@@ -1466,7 +1495,7 @@ function renderCHD(){
     body.innerHTML = cl.segs.map(({si,score})=>{
       const s = segs[si], t = C.texts[s.text]; let h = '', pos = C.tokStart[s.start];
       for(let i=s.start;i<s.end;i++){ h += esc(t.text.slice(pos, C.tokStart[i])); const w = t.text.slice(C.tokStart[i], C.tokEnd[i]); h += top.has(C.forms[C.tokForm[i]]) ? `<mark>${esc(w)}</mark>` : esc(w); pos = C.tokEnd[i]; }
-      return `<div class="seg" style="border-left-color:${col(k)}"><div class="muted">score ${fx(score,1)} · ${esc(t.name)} ${esc(Object.entries(t.vars).map(([a,b])=>'*'+a+'_'+b).join(' '))}</div>${h}</div>`;
+      return `<div class="seg" dir="auto" style="border-left-color:${col(k)}"><div class="muted">score ${fx(score,1)} · ${esc(t.name)} ${esc(Object.entries(t.vars).map(([a,b])=>'*'+a+'_'+b).join(' '))}</div>${h}</div>`;
     }).join('');
   } else if(tab==='afc'){
     if(res.K<3){ body.innerHTML = '<div class="empty">Il faut au moins 3 classes pour l\'AFC des classes.</div>'; return; }

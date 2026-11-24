@@ -46,6 +46,23 @@ Un fichier sans ligne étoilée devient un texte unique, avec la variable `*fich
 
 Chaque tableau s'exporte en CSV (séparateur point-virgule). Chaque graphique s'exporte en SVG ou en PNG.
 
+## Langues
+
+Lexicomesure fonctionne en français et en arabe (et plus largement avec toute langue à alphabet).
+
+Pour l'arabe :
+- les voyelles brèves (tashkīl), le tatwīl et les formes de l'alif (أ إ آ ٱ → ا ; ى → ي) sont normalisés ;
+- la ponctuation arabe (، ؛ ؟) est reconnue ;
+- une liste de mots-outils arabes est fournie ;
+- une option détache l'article et les proclitiques (و، ف، ب، ك، ل + ال), de sorte que الاستبداد, بالاستبداد et استبداد comptent comme une seule forme. C'est une approximation, pas une analyse morphologique ;
+- l'affichage passe de droite à gauche quand le corpus est majoritairement en arabe.
+
+## Corpus d'exemple
+
+Le dossier `exemples/` contient deux corpus du domaine public, pris sur Wikisource, pour tester le logiciel :
+- `corpus_hugo_jaures.txt` : Victor Hugo, « La misère » (1849) et Jean Jaurès, « Discours à la jeunesse » (1903) ;
+- `corpus_arabe_jibran_kawakibi.txt` : deux chapitres des « Ailes brisées » de Gibran Khalil Gibran (1912) et le chapitre « Qu'est-ce que le despotisme ? » de « Tabā'i' al-istibdād » d'Abd al-Rahman al-Kawakibi (1902).
+
 ## Limites
 
 - Il n'y a pas de lemmatisation par dictionnaire : les analyses portent sur les formes graphiques. Une option regroupe seulement le singulier et le pluriel.
